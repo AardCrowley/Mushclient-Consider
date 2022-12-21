@@ -139,7 +139,7 @@
 		send_to="12"
 		>
 		<send>mob_color = "lightpink"
-			mob_range = "+21 to +32"</send>
+			mob_range = "+21 to +30"</send>
 	</trigger>
 	<trigger
 		enabled="n"
@@ -153,7 +153,7 @@
 		send_to="12"
 		>
 		<send>mob_color = "darkmagenta"
-			mob_range = "+32 to +41"</send>
+			mob_range = "+31 to +41"</send>
 	</trigger>
 	<trigger
 		enabled="n"
@@ -531,7 +531,7 @@
 	<trigger
 		enabled="n"
 		group="track_mob_moves"
-		match="^(.+) (?:skulks|swims|flies|hops|leaves|glides|jets|walks) (?:north|south|east|west|up|down).$"
+		match="^(.+) (?:skulks|swims|flies|hops|leaves|glides|jets|walks|dashes) (?:north|south|east|west|up|down).$"
 		omit_from_output="n"
 		keep_evaluating="y"
 		regexp="y"
@@ -543,7 +543,7 @@
 	<trigger
 		enabled="n"
 		group="track_mob_moves"
-		match="^(.+) (?:skulks|swims|flies|arrives|glides|jets|walks) (?:in )?from the (?:north|south|east|west|above|below).$"
+		match="^(.+) (?:skulks|swims|flies|arrives|glides|jets|walks|canters|charging) (?:in )?from (?:the )?(?:north|south|east|west|above|below).$"
 		omit_from_output="n"
 		keep_evaluating="y"
 		regexp="y"
