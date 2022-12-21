@@ -15,9 +15,9 @@ Note: This plugin picks up custom mob keywords from S&D (either Crowley's or Win
   - conw \<word\> - set default command to word.
   - conw execute_mode [skill|cast|pro] - shows or sets how target keywords are passed to execute command
   - MUD server behaves differently when processing multiple keywords target for spells/skills.
-  - - conw execute_mode skill - execute sends target as <num>.'keyword1 keyword2...'
-  - - conw execute_mode cast - execute sends target as '<num>.keyword1 keyword2...'
-  - - conw execute_mode pro - execute sends target as separate arguments without quotes, starting with <num> always.
+  - - conw execute_mode skill - execute sends target as \<num\>.'keyword1 keyword2...'
+  - - conw execute_mode cast - execute sends target as '\<num\>.keyword1 keyword2...'
+  - - conw execute_mode pro - execute sends target as separate arguments without quotes, starting with \<num\> always.
   - - An example for a 4th mob called 'Strong guard':
 ```                   
     skill           - 4.'strong guard', use directly with skills or aliases like backstab* => backstab %1
