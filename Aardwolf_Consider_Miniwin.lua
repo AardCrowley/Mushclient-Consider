@@ -40,6 +40,7 @@ require "aard_register_z_on_create"
 require "mw_theme_base"
 require "movewindow"
 require "gmcphelper"
+require "tprint"
 require "var"
 
 --consider flags
@@ -48,7 +49,7 @@ local conw_entry = tonumber(GetVariable("conw_entry")) or 1
 local conw_kill = tonumber(GetVariable("conw_kill")) or 1
 local conw_misc = tonumber(GetVariable("conw_misc")) or 1
 local conw_execute_mode = GetVariable("conw_execute_mode") ~= nil and GetVariable("conw_execute_mode") or "skill"
-local conw_ignore_area = GetVariable("conw_ignore_area") ~=nil and GetVariable("conw_ignore_area") or ""
+local conw_ignore_areas = {}
 
 local conwall_options = {}
 
@@ -139,8 +140,10 @@ function Conw (name, line, wildcards)
 			"<num> <word> - Execute <word> with keyword from line <num> on consider window.",
 			"<num> - Execute with default word.",
 			"conw <word> - set default command.",
-			"conw IgnoreArea - set or clear area name to ignore for conw",
-			"  - For example: conw IgnoreArea bootcamp - will skip auto sending consider command in Boot Training Grounds area",
+			"conw IgnoreArea [add|remove|list] - add/remove or list area names to ignore for conw",
+			"  - For example: conw IgnoreArea add bootcamp - will skip auto sending consider command in Boot Training Grounds area",
+			"  -              conw IgnoreArea remove bootcamp - remove bootcamp from ignore list",
+			"  -              conw IgnoreArea list - list ignored areas",
 			"conw execute_mode [skill|cast|pro] - shows or sets how target keywords are passed to execute command",
 			"  - MUD server behaves differently when processing multiple keywords target for spells/skills.",
 			"  conw execute_mode skill - execute sends target as <num>.'keyword1 keyword2...'",
@@ -306,11 +309,27 @@ function Conw (name, line, wildcards)
 			SetVariable("conw_execute_mode", "cast")
 		end
 		Note("Conw execute_mode: ".. GetVariable("conw_execute_mode"))
-	elseif wildcards[1] and wildcards[1]:match("^IgnoreArea") then
-		local zone = string.match(wildcards[1], "^IgnoreArea (.*)$")
-		conw_ignore_area = zone ~= nil and zone or ""
-		SetVariable("conw_ignore_area", conw_ignore_area)
-		Note("Conw IgnoreArea: ".. GetVariable("conw_ignore_area"))
+	elseif wildcards[1] and wildcards[1]:match("^IgnoreArea add (.+)$") then
+		local zone = string.match(wildcards[1], "^IgnoreArea add (.+)$")
+		if conw_ignore_areas[zone] == nil then
+			conw_ignore_areas[zone] = true
+			SetVariable("conw_ignore_areas", serialize.save_simple(conw_ignore_areas))
+			Note("Conw added "..zone.." to ignore areas list")
+		else
+			Note("Area "..zone.." is already in ignore areas list")
+		end
+	elseif wildcards[1] and wildcards[1]:match("^IgnoreArea remove (.+)$") then
+		local zone = string.match(wildcards[1], "^IgnoreArea remove (.+)$")
+		if conw_ignore_areas[zone] ~= nil then
+			conw_ignore_areas[zone] = nil
+			SetVariable("conw_ignore_areas", serialize.save_simple(conw_ignore_areas))
+			Note("Conw removed "..zone.." from ignore areas list")
+		else
+			Note("Area "..zone.." is not in ignore areas list")
+		end
+	elseif wildcards[1] and wildcards[1]:match("^IgnoreArea list$") then
+		Note("Conw ignoring the following areas:")
+		tprint(conw_ignore_areas)
 	elseif wildcards[1] and wildcards[1]:match ("^%w+$") then
 		SetVariable ("default_command", wildcards[1])
 		default_command = GetVariable ("default_command")
@@ -320,29 +339,27 @@ function Conw (name, line, wildcards)
 end -- Conw
 
 function Send_consider ()
-	if conw_ignore_area ~= "" then
-		local zone = gmcp("room.info.zone")
-		if zone == conw_ignore_area then
-			targT = {}
-			local t = {
-				keyword = "",
-				index   = 1,
-				name    = "Ignoring zone ".. zone,
-				mflags  = "",
-				line    = "",
-				colour  = "gray",
-				range   = "",
-				message = "",
-				dead    = false,
-				attacked = false,
-				aimed   = false,
-				left    = false,
-				came    = false,
-			}
-			table.insert(targT, t)
-			Show_Window()
-			return
-		end
+	local zone = gmcp("room.info.zone")
+	if conw_ignore_areas[zone] then
+		targT = {}
+		local t = {
+			keyword = "",
+			index   = 1,
+			name    = "Ignoring zone ".. zone,
+			mflags  = "",
+			line    = "",
+			colour  = "gray",
+			range   = "",
+			message = "",
+			dead    = false,
+			attacked = false,
+			aimed   = false,
+			left    = false,
+			came    = false,
+		}
+		table.insert(targT, t)
+		Show_Window()
+		return
 	end
 	if GetVariable("doing_consider") == "true" or GetVariable("doing_conwallslow") == "true" then
 		return
@@ -1162,7 +1179,12 @@ function OnPluginInstall ()
 	conw_kill = tonumber(GetVariable("conw_kill")) or 1
 	conw_misc = tonumber(GetVariable("conw_misc")) or 1
 	conw_execute_mode = GetVariable("conw_execute_mode") ~= nil and GetVariable("conw_execute_mode") or "skill"
-	conw_ignore_area = GetVariable("conw_ignore_area") ~= nil and GetVariable("conw_ignore_area") or "bootcamp"
+	local ignore_list = GetVariable("conw_ignore_areas")
+	if ignore_list ~= nil then
+		conw_ignore_areas = loadstring(string.format("return %s", ignore_list))()
+	else
+		conw_ignore_areas = {["bootcamp"] = true}
+	end
 
 	EnableTriggerGroup ("auto_consider", conw_on)
 	if tonumber(conw_on) == 1 then
@@ -1215,7 +1237,7 @@ function OnPluginSaveState ()
 	SetVariable("conw_entry", conw_entry)
 	SetVariable("conw_on", conw_on)
 	SetVariable("conw_execute_mode", conw_execute_mode)
-	SetVariable("conw_ignore_area", conw_ignore_area)
+	SetVariable("conw_ignore_areas", serialize.save_simple(conw_ignore_areas))
 	movewindow.save_state (Win)
 	Save_conwall_options()
 end -- OnPluginSaveState
