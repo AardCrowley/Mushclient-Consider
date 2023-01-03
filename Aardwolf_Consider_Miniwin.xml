@@ -434,6 +434,30 @@
 	<trigger
 		enabled="n"
 		group="auto_track_kills"
+		match="^(.*) howls as \w+ last spark of life is drained!!$"
+		omit_from_output="n"
+		keep_evaluating="y"
+		regexp="y"
+		script="Update_kill"
+		send_to="12"
+		sequence="1"
+		>
+	</trigger>
+	<trigger
+		enabled="n"
+		group="auto_track_kills"
+		match="^(.*) turns deadly pale and collapses!!$"
+		omit_from_output="n"
+		keep_evaluating="y"
+		regexp="y"
+		script="Update_kill"
+		send_to="12"
+		sequence="1"
+		>
+	</trigger>
+	<trigger
+		enabled="n"
+		group="auto_track_kills"
 		match="^The mind force crushes (.*) into a bloody pulp! \w+ is DEAD!$"
 		omit_from_output="n"
 		keep_evaluating="y"
