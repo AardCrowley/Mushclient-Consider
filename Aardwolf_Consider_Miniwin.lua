@@ -46,7 +46,8 @@ require "var"
 --consider flags
 local conw_on = tonumber(GetVariable("conw_on")) or 1
 local conw_entry = tonumber(GetVariable("conw_entry")) or 1
-local conw_kill = tonumber(GetVariable("conw_kill")) or 1
+local conw_kill = tonumber(GetVariable("conw_kill")) or 0
+local conw_combatend = tonumber(GetVariable("conw_combatend")) or 1
 local conw_misc = tonumber(GetVariable("conw_misc")) or 1
 local conw_execute_mode = GetVariable("conw_execute_mode") ~= nil and GetVariable("conw_execute_mode") or "skill"
 local conw_ignore_areas = {}
@@ -76,6 +77,7 @@ local targT = {}
 --11        Player resting or sitting
 --12        Player running
 
+local was_in_combat = false
 function OnPluginBroadcast (msg, id, name, text)
 	local gmcparg = ""
 	local luastmt = ""
@@ -93,6 +95,15 @@ function OnPluginBroadcast (msg, id, name, text)
 			assert (loadstring (luastmt or "")) ()
 			currentState = tonumber(gmcpval("status.state"))
 			Update_Current_Target()
+
+			if currentState == 8 then
+				was_in_combat = true
+			elseif currentState == 3 and was_in_combat then
+				was_in_combat = false
+				if conw_on and conw_combatend then
+					Send_consider()
+				end
+			end
 
 			if GetVariable("doing_conwallslow") == "true" and conwall_options.slow_mode == "pct" then
 				local pct = tonumber(gmcp("char.status.enemypct")) or 100
@@ -176,7 +187,7 @@ function Conw (name, line, wildcards)
 			"    - xset qk my_uber_attack_alias",
 			"    - and have the above alias expand to conw_notify_attack %1;;kill %1",
 			"conw auto|on|off - toggle auto update consider window on room entry and after combat.",
-			"conw misc|entry|kill - toggle consider on room entry, mob kill or miscellanous stuff",
+			"conw misc|entry|kill|combatend - toggle consider on room entry, mob kill, combat end or miscellanous stuff",
 			"conw flags - toggle showing of flags on and off.",
 			"conw ?|help - show this help."
 		}
@@ -282,6 +293,19 @@ function Conw (name, line, wildcards)
 		end
 		if conw_on == 1 then
 			EnableTriggerGroup("auto_consider_misc", conw_misc)
+		end
+		return
+	end
+
+	if wildcards[1] == "combatend" then
+		if conw_combatend == 1 then
+			conw_combatend = 0
+			ColourTell ("white", "blue", "Consider on combat end - OFF.")
+			ColourNote ("", "black", " ")
+		else
+			conw_combatend = 1
+			ColourTell ("white", "blue", "Consider on combat end - ON.")
+			ColourNote ("", "black", " ")
 		end
 		return
 	end
@@ -941,7 +965,8 @@ function Draw_Title ()
 	local title_text = ""
 	local entrycheck = {"@RE", "@GE"}
 	local killcheck = {"@RK", "@GK"}
-	local misccheck = {"@RM@W", "@GM@W"}
+	local misccheck = {"@RM", "@GM"}
+	local combatendcheck = {"@RC@W", "@GC@W"}
 	local skipevil = {"@GR@W", "@RR@W"}
 	local skipgood = {"@GG@W", "@RG@W"}
 	local skipneut = {"@GN@W", "@RN@W"}
@@ -955,7 +980,7 @@ function Draw_Title ()
 
 	movewindow.add_drag_handler (Win, 0, top, right, bottom, 1)
 	if (conw_on==1) then
-		consider_status = "@GON@W "..entrycheck[conw_entry+1]..killcheck[conw_kill+1]..misccheck[conw_misc+1].." "
+		consider_status = "@GON@W "..entrycheck[conw_entry+1]..killcheck[conw_kill+1]..misccheck[conw_misc+1]..combatendcheck[conw_combatend].." "
 				  ..skipevil[(conwall_options.skip_evil and 1 or 0)+1]
 				  ..skipgood[(conwall_options.skip_good and 1 or 0)+1]
 				  ..skipneut[(conwall_options.skip_neutral and 1 or 0)+1]
@@ -1176,8 +1201,9 @@ function OnPluginInstall ()
 
 	conw_on = tonumber(GetVariable("conw_on")) or 1
 	conw_entry = tonumber(GetVariable("conw_entry")) or 1
-	conw_kill = tonumber(GetVariable("conw_kill")) or 1
+	conw_kill = tonumber(GetVariable("conw_kill")) or 0
 	conw_misc = tonumber(GetVariable("conw_misc")) or 1
+	conw_combatend = tonumber(GetVariable("conw_combatend")) or 1
 	conw_execute_mode = GetVariable("conw_execute_mode") ~= nil and GetVariable("conw_execute_mode") or "skill"
 	local ignore_list = GetVariable("conw_ignore_areas")
 	if ignore_list ~= nil then
@@ -1212,7 +1238,7 @@ end -- OnPluginInstall
 
 function OnPluginEnable ()
 	Load_conwall_options()
-	Title_width = WindowTextWidth (Win, Font_id, TITLE.. " (".. default_command.. ")".. " - ON EKM RGNW -100..+100")
+	Title_width = WindowTextWidth (Win, Font_id, TITLE.. " (".. default_command.. ")".. " - ON EKMC RGNW -100..+100")
 	Banner_width = Title_width + BORDER_WIDTH * 2 + TEXT_OFFSET * 2
 	Show_Banner ()
 end -- OnPluginEnable
@@ -1235,6 +1261,7 @@ function OnPluginSaveState ()
 	SetVariable("conw_misc", conw_misc)
 	SetVariable("conw_kill", conw_kill)
 	SetVariable("conw_entry", conw_entry)
+	SetVariable("conw_combatend", conw_combatend)
 	SetVariable("conw_on", conw_on)
 	SetVariable("conw_execute_mode", conw_execute_mode)
 	SetVariable("conw_ignore_areas", serialize.save_simple(conw_ignore_areas))
