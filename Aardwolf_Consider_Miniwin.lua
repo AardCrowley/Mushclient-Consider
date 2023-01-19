@@ -980,7 +980,7 @@ function Draw_Title ()
 
 	movewindow.add_drag_handler (Win, 0, top, right, bottom, 1)
 	if (conw_on==1) then
-		consider_status = "@GON@W "..entrycheck[conw_entry+1]..killcheck[conw_kill+1]..misccheck[conw_misc+1]..combatendcheck[conw_combatend].." "
+		consider_status = "@GON@W "..entrycheck[conw_entry+1]..killcheck[conw_kill+1]..misccheck[conw_misc+1]..combatendcheck[conw_combatend+1].." "
 				  ..skipevil[(conwall_options.skip_evil and 1 or 0)+1]
 				  ..skipgood[(conwall_options.skip_good and 1 or 0)+1]
 				  ..skipneut[(conwall_options.skip_neutral and 1 or 0)+1]
