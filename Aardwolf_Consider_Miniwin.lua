@@ -1,5 +1,5 @@
-dofile (GetPluginInfo(GetPluginID(), 20).. "aardwolf_colors.lua")
-dofile (GetPluginInfo (GetPluginID(), 20).. "Name_Cleanup.lua")
+dofile(GetInfo(60) .. "aardwolf_colors.lua")
+dofile(GetPluginInfo(GetPluginID(), 20) .. "Name_Cleanup.lua")
 
 -- Options -----------------------------------------------
 local BACKGROUND_COLOUR		= ColourNameToRGB "black"
@@ -162,7 +162,7 @@ function Conw (name, line, wildcards)
 			"  conw execute_mode pro - execute sends target as separate arguments without quotes, starting with <num> always.",
 			"  - An example for a 4th mob called 'Strong guard':",
 			"    skill - 4.'strong guard', use directly with skills or aliases like backstab* => backstab %1",
-			"    spell - '4.strong guard', use directly with spells or aliases like mm* => cast 'magic missile' %1",
+			"    cast - '4.strong guard', use directly with spells or aliases like mm* => cast 'magic missile' %1",
 			"    pro   - 4 strong guard, use if you know what you're doing.",
 			"  - Note: target number is always present i.e.: 1 strong guard",
 			"conwall - Execute all targets matching selected options with default word.",
@@ -1014,7 +1014,7 @@ function Update_Current_Target()
 	if target == nil or target =="" then
 		return
 	end
-	target = Strip_colours(target:lower())
+	target = strip_colours(target:lower())
 
 	for i = #targT, 1, -1 do
 		targT[i].aimed = false
@@ -1044,7 +1044,7 @@ function Show_Window ()
 	-- get width and height and draw the window
 	if #targT > 0 then
 		for i,v in ipairs (targT) do
-			Window_width = math.max((WindowTextWidth (Win, Font_id, tostring(i).. ".   ".. Strip_colours(v.mflags).. " ".. v.name.. " ".. v.range) + TEXT_OFFSET * 2 + BORDER_WIDTH * 2), Banner_width, Window_width)
+			Window_width = math.max((WindowTextWidth (Win, Font_id, tostring(i).. ".   ".. strip_colours(v.mflags).. " ".. v.name.. " ".. v.range) + TEXT_OFFSET * 2 + BORDER_WIDTH * 2), Banner_width, Window_width)
 		end
 	else
 		Window_width = Banner_width
@@ -1071,13 +1071,13 @@ function Show_Window ()
 		fontid = (v.dead or v.left) and FontStrikeout_id or ((v.aimed or not ShouldSkipMob(v, false)) and FontBold_id or Font_id)
 		local sAttacked = (v.aimed and not v.dead) and "@R\215@W " or (v.attacked and "@G\215@W " or "  ")
 		local sLine = tostring(i).. ". ".. sAttacked.. v.mflags.. " @W"
-		local name_left = WindowTextWidth (Win, fontid, Strip_colours(sLine)) + left
+		local name_left = WindowTextWidth (Win, fontid, strip_colours(sLine)) + left
 		sLine = sLine.. v.name.. " ".. colour_to_ansi[v.colour].. v.range
-		right   = WindowTextWidth (Win, fontid, Strip_colours(sLine)) + left
+		right   = WindowTextWidth (Win, fontid, strip_colours(sLine)) + left
 		if v.pct ~= nil then
 			local pct = tonumber(v.pct)
 			if pct ~= nil then
-				local name_len = #Strip_colours(v.name)
+				local name_len = #strip_colours(v.name)
 				Theme.DrawTextBox(Win, fontid, name_left, top, string.rep(" ", math.ceil((100-pct) * name_len / 100)), utf8, false, 121, 0)
 			end
 		end
