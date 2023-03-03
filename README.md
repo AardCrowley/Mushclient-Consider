@@ -1,7 +1,4 @@
 # Mushclient-Consider
-```diff
--INSTALL INTO SUBFOLDER. DON'T OVERWRITE ANY MUSH CLIENT FILES.
-```
 
 This plugin creates and displays a numbered list of the mobs in a room.
 Allows killing specific mob in the room with mouse or by just sending mob number like "1", "2" etc.
