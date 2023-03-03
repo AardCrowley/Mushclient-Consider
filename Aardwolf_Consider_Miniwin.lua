@@ -100,7 +100,7 @@ function OnPluginBroadcast (msg, id, name, text)
 				was_in_combat = true
 			elseif currentState == 3 and was_in_combat then
 				was_in_combat = false
-				if conw_on and conw_combatend then
+				if conw_on == 1 and conw_combatend == 1 then
 					Send_consider()
 				end
 			end
@@ -363,6 +363,10 @@ function Conw (name, line, wildcards)
 end -- Conw
 
 function Send_consider ()
+	if conw_on ~= 1 then
+		return
+	end
+
 	local zone = gmcp("room.info.zone")
 	if conw_ignore_areas[zone] then
 		targT = {}
@@ -424,7 +428,7 @@ function Command_line (name, line, wildcards)
 	local iNum = tonumber (wildcards[1])
 	local sKey = ""
 
-	SetVariable("doing_conwallslow", "false")
+	Cancel_conwallslow()
 	if iNum > #targT then
 		return
 	end
@@ -514,7 +518,7 @@ function ShouldSkipMob(mob, show_messages)
 end
 
 function Conw_all(name, line, wildcards)
-	SetVariable("doing_conwallslow", "false")
+	Cancel_conwallslow()
 
 	if #targT == 0 then
 		ColourTell ("white", "blue", "no targets to conwall")
@@ -541,6 +545,7 @@ function Conw_all_slow(name, line, wildcards)
 		if not ShouldSkipMob(targT[i], false) then
 			targT[i].attacked = true
 			SetVariable("doing_conwallslow", "true")
+			EnableTriggerGroup ("conwallslow", 1)
 			found = true
 			Ececute_Mob(default_command, i)
 			break
@@ -550,7 +555,7 @@ function Conw_all_slow(name, line, wildcards)
 		ColourTell ("white", "blue", "no targets to conwallslow")
 		ColourNote ("", "black", " ")
 		if GetVariable("doing_conwallslow") == "true" then
-			SetVariable("doing_conwallslow", "false")
+			Cancel_conwallslow()
 			conwall_slow_skip_next_death = false
 			Send_consider()
 		end
@@ -566,6 +571,7 @@ end
 
 function Cancel_conwallslow(name, line, wildcards)
 	SetVariable("doing_conwallslow", "false")
+	EnableTriggerGroup ("conwallslow", 0)
 end
 
 function Update_kill(name, line, wildcards)
