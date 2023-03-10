@@ -473,7 +473,7 @@
 	<trigger
 		enabled="n"
 		group="auto_track_kills"
-		match="^(.*) screams in agony as the acid consumes it!!$"
+		match="^(.*) screams in agony as the acid consumes \w+!!$"
 		omit_from_output="n"
 		keep_evaluating="y"
 		regexp="y"
