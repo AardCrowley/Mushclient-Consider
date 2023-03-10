@@ -533,7 +533,7 @@
 	<trigger
 		enabled="n"
 		group="auto_track_kills"
-		match="^(.*) is slain by a final .*!!$"
+		match="^(.*) smoulders as the lightning destroys \w+!!$"
 		omit_from_output="n"
 		keep_evaluating="y"
 		regexp="y"
@@ -558,7 +558,7 @@
 	<trigger
 		enabled="n"
 		group="track_mob_moves"
-		match="^(.+) (?:skulks|swims|flies|hops|leaves|glides|jets|walks|dashes|slinks|crashes|lopes|floats|wanders|strides) (?:north|south|east|west|up|down).$"
+		match="^(.+) (?:skulks|swims|flies|hops|leaves|glides|jets|walks|dashes|slinks|crashes|lopes|floats|wanders|strides|scurries) (?:north|south|east|west|up|down).$"
 		omit_from_output="n"
 		keep_evaluating="y"
 		regexp="y"
@@ -570,7 +570,7 @@
 	<trigger
 		enabled="n"
 		group="track_mob_moves"
-		match="^(.+) (?:skulks|swims|flies|arrives|glides|jets|walks|canters|charging|slinks|crashes|lopes|floats|wanders|strides) (?:in )?from (?:the )?(?:north|south|east|west|above|below).$"
+		match="^(.+) (?:skulks|swims|flies|arrives|glides|jets|walks|canters|charging|slinks|crashes|lopes|floats|wanders|strides|scurries) (?:in )?from (?:the )?(?:north|south|east|west|above|below).$"
 		omit_from_output="n"
 		keep_evaluating="y"
 		regexp="y"
