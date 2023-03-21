@@ -78,6 +78,7 @@ local targT = {}
 --12        Player running
 
 local was_in_combat = false
+local sent_tags_option = false
 function OnPluginBroadcast (msg, id, name, text)
 	local gmcparg = ""
 	local luastmt = ""
@@ -95,6 +96,12 @@ function OnPluginBroadcast (msg, id, name, text)
 			assert (loadstring (luastmt or "")) ()
 			currentState = tonumber(gmcpval("status.state"))
 			Update_Current_Target()
+
+			if not sent_tags_option and (currentState == 3 or currentState == 4 or currentState == 8 or
+			                             currentState == 9 or currentState == 11 or currentState == 12) then
+				SendNoEcho("tags roomchars on")
+				sent_tags_option = true
+			end
 
 			if currentState == 8 then
 				was_in_combat = true
@@ -202,7 +209,6 @@ function Conw (name, line, wildcards)
 	if wildcards[1] == "auto" then
 		if conw_on == 1 then
 			conw_on = 0
-			EnableTriggerGroup ("auto_consider_on_entry", 0)
 			EnableTriggerGroup ("auto_consider_on_kill", 0)
 			EnableTriggerGroup ("auto_consider_misc", 0)
 			EnableTriggerGroup ("auto_track_kills", 0)
@@ -211,7 +217,6 @@ function Conw (name, line, wildcards)
 			ColourNote ("", "black", " ")
 		else
 			conw_on = 1
-			EnableTriggerGroup ("auto_consider_on_entry", conw_entry)
 			EnableTriggerGroup ("auto_consider_on_kill", conw_kill)
 			EnableTriggerGroup ("auto_consider_misc", conw_misc)
 			EnableTriggerGroup ("auto_track_kills", 1)
@@ -226,7 +231,6 @@ function Conw (name, line, wildcards)
 	if wildcards[1] == "off" then
 		conw_on = 0
 		EnableTriggerGroup ("auto_consider_on_kill", 0)
-		EnableTriggerGroup ("auto_consider_on_entry", 0)
 		EnableTriggerGroup ("auto_consider_misc", 0)
 		EnableTriggerGroup ("auto_track_kills", 0)
 		EnableTriggerGroup ("track_mob_moves", 0)
@@ -238,7 +242,6 @@ function Conw (name, line, wildcards)
 
 	if wildcards[1] == "on" then
 		conw_on = 1
-		EnableTriggerGroup ("auto_consider_on_entry", conw_entry)
 		EnableTriggerGroup ("auto_consider_on_kill", conw_kill)
 		EnableTriggerGroup ("auto_consider_misc", conw_misc)
 		EnableTriggerGroup ("auto_track_kills", 1)
@@ -274,9 +277,6 @@ function Conw (name, line, wildcards)
 			conw_entry = 1
 			ColourTell ("white", "blue", "Consider on entry - ON.")
 			ColourNote ("", "black", " ")
-		end
-		if conw_on == 1 then
-			EnableTriggerGroup("auto_consider_on_entry", conw_entry)
 		end
 		return
 	end
@@ -698,6 +698,29 @@ function Update_mob_left(name, line, wildcards)
 			Update_mobs_indicies(i)
 			Show_Window()
 			break
+		end
+	end
+end
+
+local roomchars
+function RoomCharsStart(name, line, wildcards)
+	roomchars = {}
+	EnableTriggerGroup("roomchars", 1)
+end
+
+function CaptureRoomChar(name, line, wildcards)
+	table.insert(roomchars, line)
+end
+
+function RoomCharsEnd(name, line, wildcards)
+	EnableTriggerGroup("roomchars", 0)
+
+	if conw_entry == 1 then
+		if #roomchars > 0 then
+			Send_consider()
+		else
+			targT = {}
+			Show_Window()
 		end
 	end
 end
@@ -1220,13 +1243,11 @@ function OnPluginInstall ()
 
 	EnableTriggerGroup ("auto_consider", conw_on)
 	if tonumber(conw_on) == 1 then
-		EnableTriggerGroup ("auto_consider_on_entry", conw_entry)
 		EnableTriggerGroup ("auto_consider_on_kill", conw_kill)
 		EnableTriggerGroup ("auto_consider_misc", conw_misc)
 		EnableTriggerGroup ("auto_track_kills", 1)
 		EnableTriggerGroup ("track_mob_moves", 1)
 	else
-		EnableTriggerGroup ("auto_consider_on_entry", 0)
 		EnableTriggerGroup ("auto_consider_on_kill", 0)
 		EnableTriggerGroup ("auto_consider_misc", 0)
 		EnableTriggerGroup ("auto_track_kills", 0)
@@ -1242,7 +1263,7 @@ function OnPluginInstall ()
 	OnPluginEnable ()
 end -- OnPluginInstall
 
-function OnPluginEnable ()
+function OnPluginEnable()
 	Load_conwall_options()
 	Title_width = WindowTextWidth (Win, Font_id, TITLE.. " (".. default_command.. ")".. " - ON EKMC RGNW -100..+100")
 	Banner_width = Title_width + BORDER_WIDTH * 2 + TEXT_OFFSET * 2

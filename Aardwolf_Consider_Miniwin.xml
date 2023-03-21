@@ -43,7 +43,7 @@
 		save_state="y"
 		date_written="2009-08-14 06:12:14"
 		requires="4.43"
-		version="2.03"
+		version="2.04"
 		>
 		<description trim="y">
 			<![CDATA[
@@ -60,6 +60,38 @@
 <!--  Triggers  -->
 
 <triggers>
+	<trigger
+		enabled="y"
+		regexp="y"
+		omit_from_output="y"
+		match="^{roomchars}$"
+		send_to="12"
+		script="RoomCharsStart"
+		keep_evaluating="n"
+	>
+	</trigger>
+	<trigger
+		enabled="n"
+		regexp="y"
+		group="roomchars"
+		match="^(.*)$"
+		send_to="12"
+		script="CaptureRoomChar"
+		sequence="100"
+	>
+	</trigger>
+	<trigger
+		enabled="n"
+		regexp="y"
+		omit_from_output="y"
+		group="roomchars"
+		match="^{/roomchars}$"
+		send_to="12"
+		script="RoomCharsEnd"
+		sequence="1"
+	>
+	</trigger>
+
 	<trigger
 		enabled="n"
 		regexp="y"
@@ -371,18 +403,6 @@
 		script="Send_consider"
 		send_to="12"
 		sequence="1"
-		>
-	</trigger>
-	<trigger
-		enabled="n"
-		group="auto_consider_on_entry"
-		match="^\[ Exits"
-		omit_from_output="n"
-		keep_evaluating="y"
-		regexp="y"
-		script="Send_consider"
-		send_to="12"
-		sequence="2"
 		>
 	</trigger>
 <!-- triggers to update killed mobs  -->
