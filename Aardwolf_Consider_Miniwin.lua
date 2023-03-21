@@ -209,31 +209,21 @@ function Conw (name, line, wildcards)
 	if wildcards[1] == "auto" then
 		if conw_on == 1 then
 			conw_on = 0
-			EnableTriggerGroup ("auto_consider_on_kill", 0)
-			EnableTriggerGroup ("auto_consider_misc", 0)
-			EnableTriggerGroup ("auto_track_kills", 0)
-			EnableTriggerGroup ("track_mob_moves", 0)
 			ColourTell ("white", "blue", "Auto consider off.")
 			ColourNote ("", "black", " ")
 		else
 			conw_on = 1
-			EnableTriggerGroup ("auto_consider_on_kill", conw_kill)
-			EnableTriggerGroup ("auto_consider_misc", conw_misc)
-			EnableTriggerGroup ("auto_track_kills", 1)
-			EnableTriggerGroup ("track_mob_moves", 1)
 			ColourTell ("white", "blue", "Auto consider on.")
 			ColourNote ("", "black", " ")
 		end
+		ConfigureTriggers()
 		Show_Window()
 		return
 	end
 
 	if wildcards[1] == "off" then
 		conw_on = 0
-		EnableTriggerGroup ("auto_consider_on_kill", 0)
-		EnableTriggerGroup ("auto_consider_misc", 0)
-		EnableTriggerGroup ("auto_track_kills", 0)
-		EnableTriggerGroup ("track_mob_moves", 0)
+		ConfigureTriggers()
 		ColourTell ("white", "blue", "Auto consider off.")
 		ColourNote ("", "black", " ")
 		Show_Window()
@@ -242,10 +232,7 @@ function Conw (name, line, wildcards)
 
 	if wildcards[1] == "on" then
 		conw_on = 1
-		EnableTriggerGroup ("auto_consider_on_kill", conw_kill)
-		EnableTriggerGroup ("auto_consider_misc", conw_misc)
-		EnableTriggerGroup ("auto_track_kills", 1)
-		EnableTriggerGroup ("track_mob_moves", 1)
+		ConfigureTriggers()
 		ColourTell ("white", "blue", "Auto consider on.")
 		ColourNote ("", "black", " ")
 		Show_Window()
@@ -278,6 +265,7 @@ function Conw (name, line, wildcards)
 			ColourTell ("white", "blue", "Consider on entry - ON.")
 			ColourNote ("", "black", " ")
 		end
+		EnableTriggerGroup ("auto_consider_on_entry", conw_entry)
 		return
 	end
 
@@ -1178,6 +1166,22 @@ function Right_click_menu ()
 	end
 end
 
+function ConfigureTriggers()
+	if conw_on == 1 then
+		EnableTriggerGroup ("auto_consider_on_kill", conw_kill)
+		EnableTriggerGroup ("auto_consider_on_entry", conw_entry)
+		EnableTriggerGroup ("auto_consider_misc", conw_misc)
+		EnableTriggerGroup ("auto_track_kills", 1)
+		EnableTriggerGroup ("track_mob_moves", 1)
+	else
+		EnableTriggerGroup ("auto_consider_on_kill", 0)
+		EnableTriggerGroup ("auto_consider_on_entry", 0)
+		EnableTriggerGroup ("auto_consider_misc", 0)
+		EnableTriggerGroup ("auto_track_kills", 0)
+		EnableTriggerGroup ("track_mob_moves", 0)
+	end
+end
+
 function OnPluginInstall ()
 
 	if SHOW_WELCOME then
@@ -1241,18 +1245,7 @@ function OnPluginInstall ()
 		conw_ignore_areas = {["bootcamp"] = true}
 	end
 
-	EnableTriggerGroup ("auto_consider", conw_on)
-	if tonumber(conw_on) == 1 then
-		EnableTriggerGroup ("auto_consider_on_kill", conw_kill)
-		EnableTriggerGroup ("auto_consider_misc", conw_misc)
-		EnableTriggerGroup ("auto_track_kills", 1)
-		EnableTriggerGroup ("track_mob_moves", 1)
-	else
-		EnableTriggerGroup ("auto_consider_on_kill", 0)
-		EnableTriggerGroup ("auto_consider_misc", 0)
-		EnableTriggerGroup ("auto_track_kills", 0)
-		EnableTriggerGroup ("track_mob_moves", 0)
-	end
+	ConfigureTriggers()
 
 	if GetVariable ("enabled") == "false" then
 		ColourNote ("yellow", "", "Warning: Plugin ".. GetPluginName ().. " is currently disabled.")
@@ -1275,6 +1268,7 @@ function OnPluginConnect()
 	SetVariable("doing_consider", "false")
 	SetVariable("waiting_for_consider_start", "false")
 	SetVariable("doing_conwallslow", "false")
+	ConfigureTriggers()
 end
 
 function OnPluginDisable ()
@@ -1295,4 +1289,3 @@ function OnPluginSaveState ()
 	movewindow.save_state (Win)
 	Save_conwall_options()
 end -- OnPluginSaveState
-
