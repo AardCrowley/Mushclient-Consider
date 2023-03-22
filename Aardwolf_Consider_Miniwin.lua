@@ -173,6 +173,7 @@ function Conw(name, line, wildcards)
                          "  - Note: target number is always present i.e.: 1 strong guard",
                          "conwall - Execute all targets matching selected options with default word.",
                          "conwallslow - Execute all targets without stacking (executes next after kill)",
+                         " Note - Issuing 'look' command will abort this mode, use it in case you don't want to finish off those 20 mobs in room etc.",
                          "conwall options - See current conwall options",
                          "  conwall options SkipEvil - toggle skip Evil mobs",
                          "  conwall options SkipGood - toggle skip Good mobs",
@@ -555,6 +556,10 @@ function Conw_all_slow_next(name, line, wildcards)
 end
 
 function Cancel_conwallslow(name, line, wildcards)
+    if line ~= nil then
+        ColourTell("white", "blue", "conwallslow aborted because of look or move command")
+    end
+
     SetVariable("doing_conwallslow", "false")
     EnableTriggerGroup("conwallslow", 0)
 end
