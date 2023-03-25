@@ -65,6 +65,11 @@ local conwall_slow_skip_next_death = false
 
 local targT = {}
 
+function ConwInfo(message)
+    ColourTell("white", "blue", message)
+    ColourNote("", "black", " ")
+end
+
 -- 1         At login screen, no player yet
 -- 2         Player at MOTD or other login sequence
 -- 3         Player fully active and able to receive MUD commands
@@ -135,9 +140,7 @@ function Keyword_change(name, line, wildcards)
     end
     keyword_position = GetVariable("keyword_position")
 
-    ColourTell("white", "blue", "Keywords will now be taken from the " .. keyword_position .. " of Mobile names. ")
-    ColourNote("", "black", " ")
-
+    ConwInfo("Keywords will now be taken from the " .. keyword_position .. " of Mobile names. ")
 end -- keyword_position
 
 local function toggle_flags()
@@ -207,12 +210,10 @@ function Conw(name, line, wildcards)
     if wildcards[1] == "auto" then
         if conw_on == 1 then
             conw_on = 0
-            ColourTell("white", "blue", "Auto consider off.")
-            ColourNote("", "black", " ")
+            ConwInfo("Auto consider off.")
         else
             conw_on = 1
-            ColourTell("white", "blue", "Auto consider on.")
-            ColourNote("", "black", " ")
+            ConwInfo("Auto consider on.")
         end
         ConfigureTriggers()
         Show_Window()
@@ -222,8 +223,7 @@ function Conw(name, line, wildcards)
     if wildcards[1] == "off" then
         conw_on = 0
         ConfigureTriggers()
-        ColourTell("white", "blue", "Auto consider off.")
-        ColourNote("", "black", " ")
+        ConwInfo("Auto consider off.")
         Show_Window()
         return
     end
@@ -231,8 +231,7 @@ function Conw(name, line, wildcards)
     if wildcards[1] == "on" then
         conw_on = 1
         ConfigureTriggers()
-        ColourTell("white", "blue", "Auto consider on.")
-        ColourNote("", "black", " ")
+        ConwInfo("Auto consider on.")
         Show_Window()
         return
     end
@@ -240,12 +239,10 @@ function Conw(name, line, wildcards)
     if wildcards[1] == "kill" then
         if conw_kill == 1 then
             conw_kill = 0
-            ColourTell("white", "blue", "Consider on kill - OFF.")
-            ColourNote("", "black", " ")
+            ConwInfo("Consider on kill - OFF.")
         else
             conw_kill = 1
-            ColourTell("white", "blue", "Consider on kill - ON.")
-            ColourNote("", "black", " ")
+            ConwInfo("Consider on kill - ON.")
         end
         if conw_on == 1 then
             EnableTriggerGroup("auto_consider_on_kill", conw_kill)
@@ -256,12 +253,10 @@ function Conw(name, line, wildcards)
     if wildcards[1] == "entry" then
         if conw_entry == 1 then
             conw_entry = 0
-            ColourTell("white", "blue", "Consider on entry - OFF.")
-            ColourNote("", "black", " ")
+            ConwInfo("Consider on entry - OFF.")
         else
             conw_entry = 1
-            ColourTell("white", "blue", "Consider on entry - ON.")
-            ColourNote("", "black", " ")
+            ConwInfo("Consider on entry - ON.")
         end
         EnableTriggerGroup("auto_consider_on_entry", conw_entry)
         return
@@ -270,12 +265,10 @@ function Conw(name, line, wildcards)
     if wildcards[1] == "misc" then
         if conw_misc == 1 then
             conw_misc = 0
-            ColourTell("white", "blue", "Consider on misc - OFF.")
-            ColourNote("", "black", " ")
+            ConwInfo("Consider on misc - OFF.")
         else
             conw_misc = 1
-            ColourTell("white", "blue", "Consider on misc - ON.")
-            ColourNote("", "black", " ")
+            ConwInfo("Consider on misc - ON.")
         end
         if conw_on == 1 then
             EnableTriggerGroup("auto_consider_misc", conw_misc)
@@ -286,12 +279,10 @@ function Conw(name, line, wildcards)
     if wildcards[1] == "combatend" then
         if conw_combatend == 1 then
             conw_combatend = 0
-            ColourTell("white", "blue", "Consider on combat end - OFF.")
-            ColourNote("", "black", " ")
+            ConwInfo("Consider on combat end - OFF.")
         else
             conw_combatend = 1
-            ColourTell("white", "blue", "Consider on combat end - ON.")
-            ColourNote("", "black", " ")
+            ConwInfo("Consider on combat end - ON.")
         end
         return
     end
@@ -343,8 +334,7 @@ function Conw(name, line, wildcards)
     elseif wildcards[1] and wildcards[1]:match("^%w+$") then
         SetVariable("default_command", wildcards[1])
         default_command = GetVariable("default_command")
-        ColourTell("white", "blue", "Default command: " .. wildcards[1])
-        ColourNote("", "black", " ")
+        ConwInfo("Default command: " .. wildcards[1])
     end
 end -- Conw
 
@@ -395,8 +385,7 @@ function Ececute_Mob(command, index)
     else
         target = tostring(targT[index].index) .. ".'" .. targT[index].keyword .. "'"
     end
-    ColourTell("white", "blue", command .. " " .. target)
-    ColourNote("", "black", " ")
+    ConwInfo(command .. " " .. target)
     Execute(command .. " " .. target)
 end
 
@@ -406,8 +395,7 @@ function Execute_command(id, s)
     end
     s = s:match("^([%d.%w' ]+)%:%d+$")
     Execute(default_command .. " " .. s)
-    ColourTell("white", "blue", default_command .. " " .. s)
-    ColourNote("", "black", " ")
+    ConwInfo(default_command .. " " .. s)
 end -- Execute_command
 
 function Command_line(name, line, wildcards)
@@ -429,8 +417,7 @@ function Command_line(name, line, wildcards)
         targT[iNum].attacked = true
         Ececute_Mob(sKey, iNum)
     else
-        ColourTell("white", "blue", "no target in targT ")
-        ColourNote("", "black", " ")
+        ConwInfo("no target in targT ")
     end
 
 end -- Command_line
@@ -458,44 +445,36 @@ function ShouldSkipMob(mob, show_messages)
 
     if mob.left or mob.came then
         if show_messages then
-            ColourTell("white", "blue", "Skipping moved " .. mob.keyword .. " ")
-            ColourNote("", "black", " ")
+            ConwInfo("Skipping moved " .. mob.keyword .. " ")
         end
     elseif mob.attacked then
         if show_messages then
-            ColourTell("white", "blue", "Skipping already attacked " .. mob.keyword .. " ")
-            ColourNote("", "black", " ")
+            ConwInfo("Skipping already attacked " .. mob.keyword .. " ")
         end
     elseif mob.dead then
         if show_messages then
-            ColourTell("white", "blue", "Skipping already dead " .. mob.keyword .. " ")
-            ColourNote("", "black", " ")
+            ConwInfo("Skipping already dead " .. mob.keyword .. " ")
         end
     elseif conwall_options.skip_evil and (mob.mflags:match("%(R%)") or mob.mflags:match("%(red aura%)")) then
         if show_messages then
-            ColourTell("white", "blue", "Skipping EVIL " .. mob.keyword .. " ")
-            ColourNote("", "black", " ")
+            ConwInfo("Skipping EVIL " .. mob.keyword .. " ")
         end
     elseif conwall_options.skip_good and (mob.mflags:match("%(G%)") or mob.mflags:match("%(golden aura%)")) then
         if show_messages then
-            ColourTell("white", "blue", "Skipping GOOD " .. mob.keyword .. " ")
-            ColourNote("", "black", " ")
+            ConwInfo("Skipping GOOD " .. mob.keyword .. " ")
         end
     elseif conwall_options.skip_neutral and not (mob.mflags:match("%(R%)") or mob.mflags:match("%(red aura%)")) and
         not (mob.mflags:match("%(G%)") or mob.mflags:match("%(golden aura%)")) then
         if show_messages then
-            ColourTell("white", "blue", "Skipping NEUTRAL " .. mob.keyword .. " ")
-            ColourNote("", "black", " ")
+            ConwInfo("Skipping NEUTRAL " .. mob.keyword .. " ")
         end
     elseif conwall_options.skip_sanctuary and (mob.mflags:match("%(W%)") or mob.mflags:match("%(white aura%)")) then
         if show_messages then
-            ColourTell("white", "blue", "Skipping SANCTUARY " .. mob.keyword .. " ")
-            ColourNote("", "black", " ")
+            ConwInfo("Skipping SANCTUARY " .. mob.keyword .. " ")
         end
     elseif minlevel < conwall_options.min_level or maxlevel > conwall_options.max_level then
         if show_messages then
-            ColourTell("white", "blue", "Skipping out of level range " .. mob.keyword .. " ")
-            ColourNote("", "black", " ")
+            ConwInfo("Skipping out of level range " .. mob.keyword .. " ")
         end
     else
         return false
@@ -507,8 +486,7 @@ function Conw_all(name, line, wildcards)
     Cancel_conwallslow()
 
     if #targT == 0 then
-        ColourTell("white", "blue", "no targets to conwall")
-        ColourNote("", "black", " ")
+        ConwInfo("no targets to conwall")
     end
 
     for i = #targT, 1, -1 do
@@ -533,8 +511,7 @@ function Conw_all_slow(name, line, wildcards)
         end
     end
     if not found then
-        ColourTell("white", "blue", "no targets to conwallslow")
-        ColourNote("", "black", " ")
+        ConwInfo("no targets to conwallslow")
         if GetVariable("doing_conwallslow") == "true" then
             Cancel_conwallslow()
             conwall_slow_skip_next_death = false
@@ -554,7 +531,7 @@ end
 
 function Cancel_conwallslow(name, line, wildcards)
     if line ~= nil then
-        ColourTell("white", "blue", "conwallslow aborted because of look or move command")
+        ConwInfo("conwallslow aborted because of look or move command")
     end
 
     SetVariable("doing_conwallslow", "false")
@@ -971,8 +948,7 @@ function Adapt_consider(name, line, wildcards)
     end -- if
 
     if not mob and SHOW_NO_MOB then
-        ColourTell("white", "blue", "Could not find anything: " .. line)
-        ColourNote("", "black", " ")
+        ConwInfo("Could not find anything: " .. line)
     end -- not  found in table
 
 end -- Adapt_consider
