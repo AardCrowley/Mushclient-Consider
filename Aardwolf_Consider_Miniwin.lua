@@ -521,11 +521,6 @@ function Conw_all(name, line, wildcards)
 end -- Conw_all
 
 function Conw_all_slow(name, line, wildcards)
-    if #targT == 0 then
-        ColourTell("white", "blue", "no targets to conwallslow")
-        ColourNote("", "black", " ")
-        conwall_slow_skip_next_death = false
-    end
     local found = false
     for i = #targT, 1, -1 do
         if not ShouldSkipMob(targT[i], false) then
@@ -543,7 +538,9 @@ function Conw_all_slow(name, line, wildcards)
         if GetVariable("doing_conwallslow") == "true" then
             Cancel_conwallslow()
             conwall_slow_skip_next_death = false
-            Send_consider()
+            if conw_combatend ~= 1 then
+              Send_consider()
+            end
         end
     end
     Show_Window()
