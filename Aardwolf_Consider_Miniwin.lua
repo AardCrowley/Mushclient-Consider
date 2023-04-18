@@ -191,6 +191,12 @@ function Conw(name, line, wildcards)
                          "  conwall options SlowPct <num> - sets percentage for 'SlowMode pct'",
                          "    -  'SlowMode pct' allows you to bleed your attacks/spells to next target in the combat round",
                          "    -  where current target dies. Increases your XP rate a bit.",
+                         "  conwall options AoeCommand <command> - sets aoe command",
+                         "  conwall options AoeMinCount <num> - minimum number of mobs to aoe a room, instead of conwallslow",
+                         "  conwall options AoeMaxCount <num> - maximum number of mobs to aoe a room, instead of conwallslow",
+                         "    -  If all the mobs in the room pass Skip checks and their count is between AoeMinCount and AoeMaxCount",
+                         "    -  then conwallslow will issue AoeCommand instead of attacking mobs one by one.",
+                         "    -  set AoeMaxCount to -1, to disable aoe.",
                          "conw_notify_attack <target> - use this alias if you're attacking mob via other commands but",
                          "    - want consider window to draw attack mark on that mob.",
                          "    - For example when using S&D's kk to attack do the following:",
@@ -500,16 +506,31 @@ end -- Conw_all
 
 function Conw_all_slow(name, line, wildcards)
     local found = false
+    local found_count = 0
+    local found_i
     for i = #targT, 1, -1 do
         if not ShouldSkipMob(targT[i], false) then
-            targT[i].attacked = true
-            SetVariable("doing_conwallslow", "true")
-            EnableTriggerGroup("conwallslow", 1)
             found = true
-            Ececute_Mob(default_command, i)
-            break
+            found_count = found_count + 1
+            if found_i == nil then
+                found_i = i
+            end
         end
     end
+
+    if found_count == #targT and found_count >= conwall_options.min_aoe_count and found_count <= conwall_options.max_aoe_count then
+        for i = #targT, 1, -1 do
+            targT[i].attacked = true
+        end
+        Execute(conwall_options.aoe_command)
+        Execute(default_command)
+    elseif found then
+        targT[found_i].attacked = true
+        SetVariable("doing_conwallslow", "true")
+        EnableTriggerGroup("conwallslow", 1)
+        Ececute_Mob(default_command, found_i)
+    end
+
     if not found then
         ConwInfo("no targets to conwallslow")
         if GetVariable("doing_conwallslow") == "true" then
@@ -744,7 +765,10 @@ function Default_conwall_options()
         min_level = -2,
         max_level = 20,
         slow_mode = "pct",
-        slow_pct = 20
+        slow_pct = 20,
+        aoe_command = "c ultrablast",
+        min_aoe_count = 5,
+        max_aoe_count = -1,
     }
     return default_options
 end
@@ -764,6 +788,15 @@ function Check_conwall_options()
     end
     if conwall_options.skip_neutral == nil then
         conwall_options.skip_neutral = Default_conwall_options().skip_neutral
+    end
+    if conwall_options.aoe_command == nil then
+        conwall_options.aoe_command = Default_conwall_options().aoe_command
+    end
+    if conwall_options.min_aoe_count == nil then
+        conwall_options.min_aoe_count = Default_conwall_options().min_aoe_count
+    end
+    if conwall_options.max_aoe_count == nil then
+        conwall_options.max_aoe_count = Default_conwall_options().max_aoe_count
     end
 end
 
@@ -795,6 +828,9 @@ function Conw_all_options(name, line, wildcards)
         ShowNote(string.format("  @Y%-13.13s @w(%-3.5s@w)", "MaxLevel", tostring(conwall_options.max_level)))
         ShowNote(string.format("  @Y%-13.13s @w(%-3.5s@w)", "SlowMode", conwall_options.slow_mode))
         ShowNote(string.format("  @Y%-13.13s @w(%-3.5s@w)", "SlowPct", tostring(conwall_options.slow_pct)))
+        ShowNote(string.format("  @Y%-13.13s @w(%s@w)", "AoeCommand", conwall_options.aoe_command))
+        ShowNote(string.format("  @Y%-13.13s @w(%-3.5s@w)", "AoeMinCount", tostring(conwall_options.min_aoe_count)))
+        ShowNote(string.format("  @Y%-13.13s @w(%-3.5s@w)", "AoeMaxCount", tostring(conwall_options.max_aoe_count)))
     elseif wildcards[1] == " SkipEvil" then
         Note("Changed conwall option:")
         conwall_options.skip_evil = not conwall_options.skip_evil
@@ -851,6 +887,21 @@ function Conw_all_options(name, line, wildcards)
         Note("Changed conwall option:")
         conwall_options.slow_pct = tonumber(wildcards[1]:match("SlowPct (%d+)"))
         ShowNote(string.format("  @Y%-13.13s @w(%-3.5s@w)", "SlowPct", tostring(conwall_options.slow_pct)))
+        Save_conwall_options()
+    elseif wildcards[1]:match("AoeCommand (.+)") then
+        Note("Changed conwall option:")
+        conwall_options.aoe_command = wildcards[1]:match("AoeCommand (.+)")
+        ShowNote(string.format("  @Y%-13.13s @w(%s@w)", "AoeCommand", conwall_options.aoe_command))
+        Save_conwall_options()
+    elseif string.match(wildcards[1], " AoeMinCount %-?%d+") then
+        Note("Changed conwall option:")
+        conwall_options.min_aoe_count = tonumber(wildcards[1]:match("AoeMinCount (%-?%d+)"))
+        ShowNote(string.format("  @Y%-13.13s @w(%-3.5s@w)", "AoeMinCount", tostring(conwall_options.min_aoe_count)))
+        Save_conwall_options()
+    elseif string.match(wildcards[1], " AoeMaxCount %-?%d+") then
+        Note("Changed conwall option:")
+        conwall_options.max_aoe_count = tonumber(wildcards[1]:match("AoeMaxCount (%-?%d+)"))
+        ShowNote(string.format("  @Y%-13.13s @w(%-3.5s@w)", "AoeMaxCount", tostring(conwall_options.max_aoe_count)))
         Save_conwall_options()
     else
         Note("Unknown conwall command!")
