@@ -382,7 +382,7 @@ function Send_consider()
     end
 end -- Send_consider
 
-function Ececute_Mob(command, index)
+function Execute_Mob(command, index)
     local target
     if GetVariable("conw_execute_mode") == "pro" then
         target = tostring(targT[index].index) .. " " .. targT[index].keyword
@@ -421,7 +421,7 @@ function Command_line(name, line, wildcards)
 
     if targT[iNum] then
         targT[iNum].attacked = true
-        Ececute_Mob(sKey, iNum)
+        Execute_Mob(sKey, iNum)
     else
         ConwInfo("no target in targT ")
     end
@@ -498,7 +498,7 @@ function Conw_all(name, line, wildcards)
     for i = #targT, 1, -1 do
         if not ShouldSkipMob(targT[i], true) then
             targT[i].attacked = true
-            Ececute_Mob(default_command, i)
+            Execute_Mob(default_command, i)
         end
     end
     Show_Window()
@@ -528,7 +528,7 @@ function Conw_all_slow(name, line, wildcards)
         targT[found_i].attacked = true
         SetVariable("doing_conwallslow", "true")
         EnableTriggerGroup("conwallslow", 1)
-        Ececute_Mob(default_command, found_i)
+        Execute_Mob(default_command, found_i)
     end
 
     if not found then
