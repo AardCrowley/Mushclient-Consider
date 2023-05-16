@@ -16,7 +16,7 @@ local SHOW_WELCOME = true
 local TITLE = "consider all"
 local ECHO_CONSIDER = false -- show consider in command window
 local SHOW_NO_MOB = false -- show warning when considering an empty room
-local SHOW_FLAGS = true
+SHOW_FLAGS = true
 
 local colour_to_ansi = {
     ["chartreuse"] = "@x118",
@@ -63,7 +63,7 @@ local keyword_position = GetVariable("keyword_position") or "endw"
 local default_command
 local conwall_slow_skip_next_death = false
 
-local targT = {}
+targT = {}
 
 function ConwInfo(message)
     ColourTell("white", "blue", message)
@@ -1276,7 +1276,21 @@ function OnPluginEnable()
     Title_width = WindowTextWidth(Win, Font_id, TITLE .. " (" .. default_command .. ")" .. " - ON EKMC RGNW -100..+100")
     Banner_width = Title_width + BORDER_WIDTH * 2 + TEXT_OFFSET * 2
     Show_Banner()
+    CheckAMB()
 end -- OnPluginEnable
+
+local amb_loaded = false
+function CheckAMB()
+    if amb_loaded then
+        return
+    end
+    local amb_conw = GetInfo(60) .. "/custom/amb_conw.lua"
+    if utils.readdir(amb_conw) then
+        dofile(amb_conw)
+        ambConwInit()
+        amb_loaded = true
+    end
+end
 
 function OnPluginConnect()
     Load_conwall_options()
@@ -1284,6 +1298,7 @@ function OnPluginConnect()
     SetVariable("waiting_for_consider_start", "false")
     SetVariable("doing_conwallslow", "false")
     ConfigureTriggers()
+    CheckAMB()
 end
 
 function OnPluginDisable()

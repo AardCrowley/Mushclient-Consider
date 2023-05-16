@@ -89,7 +89,7 @@
 		send_to="12"
 		script="RoomCharsEnd"
 		keep_evaluating="y"
-		sequence="1"
+		sequence="90"
 	>
 	</trigger>
     <trigger
