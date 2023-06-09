@@ -42,6 +42,7 @@ require "movewindow"
 require "gmcphelper"
 require "tprint"
 require "var"
+require "wait"
 
 -- consider flags
 local conw_on = tonumber(GetVariable("conw_on")) or 1
@@ -52,7 +53,7 @@ local conw_misc = tonumber(GetVariable("conw_misc")) or 1
 local conw_execute_mode = GetVariable("conw_execute_mode") ~= nil and GetVariable("conw_execute_mode") or "skill"
 local conw_ignore_areas = {}
 
-local conwall_options = {}
+conwall_options = {}
 
 local search_destroy_id = "e50b1d08a0cfc0ee9c442001"
 local search_destroy_crowley_id = "30000000537461726c696e67"
@@ -383,16 +384,19 @@ function Send_consider()
 end -- Send_consider
 
 function Execute_Mob(command, index)
-    local target
-    if GetVariable("conw_execute_mode") == "pro" then
-        target = tostring(targT[index].index) .. " " .. targT[index].keyword
-    elseif GetVariable("conw_execute_mode") == "cast" then
-        target = "'" .. tostring(targT[index].index) .. "." .. targT[index].keyword .. "'"
-    else
-        target = tostring(targT[index].index) .. ".'" .. targT[index].keyword .. "'"
-    end
-    ConwInfo(command .. " " .. target)
-    Execute(command .. " " .. target)
+    wait.make(function()
+        wait.time(0.01)
+        local target
+        if GetVariable("conw_execute_mode") == "pro" then
+            target = tostring(targT[index].index) .. " " .. targT[index].keyword
+        elseif GetVariable("conw_execute_mode") == "cast" then
+            target = "'" .. tostring(targT[index].index) .. "." .. targT[index].keyword .. "'"
+        else
+            target = tostring(targT[index].index) .. ".'" .. targT[index].keyword .. "'"
+        end
+        ConwInfo(command .. " " .. target)
+        Execute(command .. " " .. target)
+    end)
 end
 
 function Execute_command(id, s)
