@@ -372,6 +372,30 @@ function Send_consider()
         Show_Window()
         return
     end
+
+    local details = gmcp("room.info.details")
+    if details:find("safe") then
+        targT = {}
+        local t = {
+            keyword = "",
+            index = 1,
+            name = "Safe room",
+            mflags = "",
+            line = "",
+            colour = "gray",
+            range = "",
+            message = "",
+            dead = false,
+            attacked = false,
+            aimed = false,
+            left = false,
+            came = false
+        }
+        table.insert(targT, t)
+        Show_Window()
+        return
+    end
+
     if GetVariable("doing_consider") == "true" or GetVariable("doing_conwallslow") == "true" then
         return
     else
