@@ -564,9 +564,6 @@ function Conw_all_slow(name, line, wildcards)
         if GetVariable("doing_conwallslow") == "true" then
             Cancel_conwallslow()
             conwall_slow_skip_next_death = false
-            if conw_combatend ~= 1 then
-              Send_consider()
-            end
         end
     end
     Show_Window()
