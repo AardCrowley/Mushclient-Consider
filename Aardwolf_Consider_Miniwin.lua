@@ -64,6 +64,7 @@ local keyword_position = GetVariable("keyword_position") or "endw"
 local default_command
 local conwall_slow_skip_next_death = false
 
+local mob_attack_sequence = 0
 targT = {}
 
 function ConwInfo(message)
@@ -366,7 +367,9 @@ function Send_consider()
             attacked = false,
             aimed = false,
             left = false,
-            came = false
+            came = false,
+            pct = 100,
+            attack_sequence = 0
         }
         table.insert(targT, t)
         Show_Window()
@@ -389,7 +392,9 @@ function Send_consider()
             attacked = false,
             aimed = false,
             left = false,
-            came = false
+            came = false,
+            pct = 100,
+            attack_sequence = 0
         }
         table.insert(targT, t)
         Show_Window()
@@ -418,6 +423,8 @@ function Execute_Mob(command, index)
         else
             target = tostring(targT[index].index) .. ".'" .. targT[index].keyword .. "'"
         end
+        mob_attack_sequence = mob_attack_sequence + 1
+        targT[index].attack_sequence = mob_attack_sequence
         ConwInfo(command .. " " .. target)
         Execute(command .. " " .. target)
     end)
@@ -584,40 +591,58 @@ function Cancel_conwallslow(name, line, wildcards)
     EnableTriggerGroup("conwallslow", 0)
 end
 
+-- Taken from http://stackoverflow.com/questions/15706270/sort-a-table-in-lua
+function spairs(t, order)
+    -- collect the keys
+    local keys = {}
+    for k in pairs(t) do keys[#keys+1] = k end
+
+    -- if order function given, sort by it by passing the table and keys a, b,
+    -- otherwise just sort the keys
+    if order then
+        table.sort(keys, function(a,b) return order(t, a, b) end)
+    else
+        table.sort(keys)
+    end
+
+    -- return the iterator function
+    local i = 0
+    return function()
+        i = i + 1
+        if keys[i] then
+            return keys[i], t[keys[i]]
+        end
+    end
+end
+
+function FinbMobTargetSortFunction(t, a, b)
+    local a_attacked = t[a].attacked and 1 or 0
+    local b_attacked = t[b].attacked and 1 or 0
+    if t[a].pct ~= t[b].pct then
+        return t[a].pct < t[b].pct
+    end
+    if a_attacked ~= b_attacked then
+        return a_attacked > b_attacked
+    end
+    if t[a].attack_sequence ~= t[b].attack_sequence then
+        return t[a].attack_sequence < t[b].attack_sequence
+    end
+    return a < b
+end
+
 function Update_kill(name, line, wildcards)
     -- Note("KILL!!!!! ["..wildcards[1].."]")
 
     local trigger_name = wildcards[1]:gsub("^%u", string.lower)
 
-    -- Try to find attacked mob first in case there're difference align or level mobs with the same name
-    for i = #targT, 1, -1 do
+    for k, v in spairs(targT, FinbMobTargetSortFunction) do
         -- Lower case first character as it's done in some death messages like kills with "project force" etc.
-        local list_name = targT[i].name:gsub("^%u", string.lower)
-        if targT[i].attacked and not targT[i].dead and (trigger_name:sub(1, #targT[i].name) == list_name) then
-            targT[i].dead = true
-            targT[i].mflags = " dead "
-            targT[i].pct = 0
-            Update_mobs_indicies(i + 1)
-            Show_Window()
-            if GetVariable("doing_conwallslow") == "true" then
-                if conwall_slow_skip_next_death then
-                    conwall_slow_skip_next_death = false
-                else
-                    Conw_all_slow()
-                end
-            end
-            return
-        end
-    end
-
-    -- Fallback to check any mob with given name
-    for i = #targT, 1, -1 do
-        local list_name = targT[i].name:gsub("^%u", string.lower)
-        if not targT[i].dead and (trigger_name:sub(1, #targT[i].name) == list_name) then
-            targT[i].dead = true
-            targT[i].mflags = " dead "
-            targT[i].pct = 0
-            Update_mobs_indicies(i + 1)
+        local list_name = v.name:gsub("^%u", string.lower)
+        if not v.dead and (trigger_name:sub(1, #v.name) == list_name) then
+            v.dead = true
+            v.mflags = " dead "
+            v.pct = 0
+            Update_mobs_indicies(k + 1)
             Show_Window()
             if GetVariable("doing_conwallslow") == "true" then
                 if conwall_slow_skip_next_death then
@@ -673,7 +698,9 @@ function Update_mob_came(name, line, wildcards)
         attacked = false,
         aimed = false,
         left = false,
-        came = true
+        came = true,
+        pct = 100,
+        attack_sequence = 0
     }
     table.insert(targT, 1, t)
     Update_mobs_indicies(2)
@@ -984,6 +1011,7 @@ function Adapt_consider(name, line, wildcards)
     if GetVariable("waiting_for_consider_start") == "true" then
         SetVariable("waiting_for_consider_start", "false")
         targT = {}
+        mob_attack_sequence = 0
     end
 
     local flags = nil
@@ -1012,7 +1040,9 @@ function Adapt_consider(name, line, wildcards)
             attacked = false,
             aimed = false,
             left = false,
-            came = false
+            came = false,
+            pct = 100,
+            attack_sequence = 0
         } -- Changed to use color, range set by triggers - Kobus
         -- Note("added ".. tostring(t.index).. ".".. tostring(t.keyword))
         if ECHO_CONSIDER then
@@ -1091,21 +1121,12 @@ function Update_Current_Target()
         targT[i].aimed = false
     end
     local found = false
-    for i = #targT, 1, -1 do
-        if not targT[i].dead and not targT[i].left and targT[i].attacked and targT[i].name:lower() == target then
-            targT[i].aimed = true
-            targT[i].pct = gmcp("char.status.enemypct")
+    for k, v in spairs(targT, FinbMobTargetSortFunction) do
+        if not v.dead and not v.left and v.name:lower() == target then
+            v.aimed = true
+            v.pct = tonumber(gmcp("char.status.enemypct")) or 100
             found = true
             break
-        end
-    end
-    if not found then
-        for i = #targT, 1, -1 do
-            if not targT[i].dead and not targT[i].left and targT[i].name:lower() == target then
-                targT[i].aimed = true
-                targT[i].pct = gmcp("char.status.enemypct")
-                break
-            end
         end
     end
     Show_Window()
@@ -1144,7 +1165,7 @@ function Show_Window()
         right = WindowTextWidth(Win, fontid, strip_colours(sLine)) + left
         if v.pct ~= nil then
             local pct = tonumber(v.pct)
-            if pct ~= nil then
+            if pct ~= nil and pct < 100 then
                 local name_len = #strip_colours(v.name)
                 Theme.DrawTextBox(Win, fontid, name_left, top, string.rep(" ", math.ceil((100 - pct) * name_len / 100)),
                     utf8, false, 121, 0)
