@@ -644,14 +644,7 @@ function Update_kill(name, line, wildcards)
             v.pct = 0
             Update_mobs_indicies(k + 1)
             Show_Window()
-            if GetVariable("doing_conwallslow") == "true" then
-                if conwall_slow_skip_next_death then
-                    conwall_slow_skip_next_death = false
-                else
-                    Conw_all_slow()
-                end
-            end
-            return
+            break
         end
     end
 
@@ -702,6 +695,7 @@ function Update_mob_came(name, line, wildcards)
         pct = 100,
         attack_sequence = 0
     }
+
     table.insert(targT, 1, t)
     Update_mobs_indicies(2)
     Show_Window()
@@ -715,6 +709,15 @@ function Update_mob_left(name, line, wildcards)
         return
     end
     local flags = SHOW_FLAGS and " left " or "      "
+
+    -- Check if there's a mob with same name which recently came to the room
+    for k, v in ipairs(targT) do
+        if v.name == mob and v.came and not v.left and not v.dead then
+            table.remove(targT, k)
+            Update_mobs_indicies(k)
+            Show_Window()
+        end
+    end
 
     -- Try to find alive not attacked mob first in case there're difference mobs with the same name
     for i = #targT, 1, -1 do
