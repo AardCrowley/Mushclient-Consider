@@ -716,6 +716,7 @@ function Update_mob_left(name, line, wildcards)
             table.remove(targT, k)
             Update_mobs_indicies(k)
             Show_Window()
+            return
         end
     end
 
