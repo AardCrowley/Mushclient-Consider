@@ -863,8 +863,12 @@ function Load_conwall_options()
     Save_conwall_options()
 end
 
+function Get_conwall_options()
+    return serialize.save_simple(conwall_options)
+end
+
 function Save_conwall_options()
-    var.config = serialize.save_simple(conwall_options)
+    var.config = Get_conwall_options()
 end
 
 function ShowNote(str)
