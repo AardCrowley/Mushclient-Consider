@@ -351,8 +351,7 @@ function Send_consider()
         return
     end
 
-    local zone = gmcp("room.info.zone")
-    if conw_ignore_areas[zone] then
+    if Is_in_ignored_zone() then
         targT = {}
         local t = {
             keyword = "",
@@ -669,8 +668,17 @@ function Update_mobs_indicies(from)
     end
 end
 
+function Is_in_ignored_zone()
+    local zone = gmcp("room.info.zone")
+    return conw_ignore_areas[zone] ~= nil
+end
+
 function Update_mob_came(name, line, wildcards)
     -- Note("CAME!!!!! ["..wildcards[1].."]")
+
+    if Is_in_ignored_zone() then
+        return
+    end
 
     local mob = wildcards[1]
     if mob == nil then
@@ -703,6 +711,10 @@ end
 
 function Update_mob_left(name, line, wildcards)
     -- Note("LEFT!!!!! ["..wildcards[1].."]")
+
+    if Is_in_ignored_zone() then
+        return
+    end
 
     local mob = wildcards[1]
     if mob == nil then
