@@ -991,7 +991,9 @@ function GetKeyword(mob)
     if (GetPluginInfo(search_destroy_id, 17)) then
         local gmcproomdata = gmcp("room")
         if gmcproomdata ~= nil and gmcproomdata.info ~= nil then
-            _, mob, _ = CallPlugin(search_destroy_id, "IGuessMobNameBroadcast", mob, gmcproomdata.info.zone)
+            local _, oldmob = CallPlugin(search_destroy_id, "get_short_mob_name")
+            _, mob, _ = CallPlugin(search_destroy_id, "IGuessMobNameNoBroadcast", mob, gmcproomdata.info.zone)
+            CallPlugin(search_destroy_id, "set_short_mob_name", oldmob)
         else
             mob = Stripname(mob)
         end
