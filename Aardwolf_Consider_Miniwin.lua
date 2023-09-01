@@ -352,6 +352,7 @@ function Send_consider()
     end
 
     if Is_in_ignored_zone() then
+        local zone = gmcp("room.info.zone")
         targT = {}
         local t = {
             keyword = "",
