@@ -182,6 +182,7 @@ function Conw(name, line, wildcards)
                          "  conwall options AoeMinCount <num> - minimum number of mobs to aoe a room",
                          "  conwall options AoeMaxCount <num> - maximum number of mobs to aoe a room",
                          "    -  set AoeMaxCount to -1, to disable aoe.",
+                         "  conwall options MaxRoomCount <num> - maximum number of mobs to stack",
                          "conw_notify_attack <target> - use this alias if you're attacking mob via other commands but",
                          "    - want consider window to draw attack mark on that mob.",
                          "    - For example when using S&D's kk to attack do the following:",
@@ -514,6 +515,7 @@ function Conw_all(name, line, wildcards)
     local isUnlimitedAoe = tostring(conwall_options.max_aoe_count) == "-1"
     local minAoeCount = conwall_options.min_aoe_count
     local maxAoeCount = conwall_options.max_aoe_count
+    local maxRoomCount = conwall_options.max_room_count
     local foundCount = 0
     local firstFoundIndex = nil
 
@@ -533,7 +535,8 @@ function Conw_all(name, line, wildcards)
 
     -- Execute commands based on AOE or single target strategy
     if isUnlimitedAoe then
-        for i = #targT, 1, -1 do
+        targTEnd = foundCount <= maxRoomCount and foundCount or maxRoomCount
+        for i = targTEnd, 1, -1 do
             if not ShouldSkipMob(targT[i], true) then
                 targT[i].attacked = true
                 Execute_Mob(default_command, i)
@@ -790,6 +793,7 @@ function Default_conwall_options()
         aoe_command = "c ultrablast",
         min_aoe_count = 5,
         max_aoe_count = -1,
+        max_room_count = 5,
     }
     return default_options
 end
@@ -812,6 +816,9 @@ function Check_conwall_options()
     end
     if conwall_options.max_aoe_count == nil then
         conwall_options.max_aoe_count = Default_conwall_options().max_aoe_count
+    end
+    if conwall_options.max_room_count == nil then
+        conwall_options.max_room_count = Default_conwall_options().max_room_count
     end
 end
 
@@ -900,6 +907,11 @@ function Conw_all_options(name, line, wildcards)
         Note("Changed conwall option:")
         conwall_options.max_aoe_count = tonumber(wildcards[1]:match("AoeMaxCount (%-?%d+)"))
         ShowNote(string.format("  @Y%-13.13s @w(%-3.5s@w)", "AoeMaxCount", tostring(conwall_options.max_aoe_count)))
+        Save_conwall_options()
+    elseif string.match(wildcards[1], " MaxRoomCount %-?%d+") then
+        Note("Changed conwall option:")
+        conwall_options.max_room_count = tonumber(wildcards[1]:match("MaxRoomCount (%-?%d+)"))
+        ShowNote(string.format("  @Y%-13.13s @w(%-3.5s@w)", "MaxRoomCount", tostring(conwall_options.max_room_count)))
         Save_conwall_options()
     else
         Note("Unknown conwall command!")
