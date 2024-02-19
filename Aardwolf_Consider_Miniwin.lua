@@ -62,7 +62,6 @@ local banner_height = 0
 local currentState = -1
 local keyword_position = GetVariable("keyword_position") or "endw"
 local default_command
-local conwall_slow_skip_next_death = false
 
 local mob_attack_sequence = 0
 targT = {}
@@ -120,13 +119,6 @@ function OnPluginBroadcast(msg, id, name, text)
                 end
             end
 
-            if GetVariable("doing_conwallslow") == "true" and conwall_options.slow_mode == "pct" then
-                local pct = tonumber(gmcp("char.status.enemypct")) or 100
-                if not conwall_slow_skip_next_death and pct <= conwall_options.slow_pct then
-                    conwall_slow_skip_next_death = true
-                    Conw_all_slow()
-                end
-            end
             --			DebugNote("char.status.state : " ..currentState)
 
         end
@@ -177,8 +169,6 @@ function Conw(name, line, wildcards)
                          "    pro   - 4 strong guard, use if you know what you're doing.",
                          "  - Note: target number is always present i.e.: 1 strong guard",
                          "conwall - Execute all targets matching selected options with default word.",
-                         "conwallslow - Execute all targets without stacking (executes next after kill)",
-                         " Note - Issuing 'look' command will abort this mode, use it in case you don't want to finish off those 20 mobs in room etc.",
                          "conwall options - See current conwall options",
                          "  conwall options SkipEvil - toggle skip Evil mobs",
                          "  conwall options SkipGood - toggle skip Good mobs",
@@ -188,16 +178,9 @@ function Conw(name, line, wildcards)
                          "    - For example: conwall options MinLevel -2 - will skips mobs with level range below -2",
                          "  conwall options MaxLevel <number> - skip mobs with level range higher than this number",
                          "    - For example: conwall options MaxLevel 21 - will skips mobs with level range above +21",
-                         "  conwall options SlowMode <kill|pct> - send next target execute command after <kill> or when",
-                         "    - current target HP% <= set percentage.",
-                         "  conwall options SlowPct <num> - sets percentage for 'SlowMode pct'",
-                         "    -  'SlowMode pct' allows you to bleed your attacks/spells to next target in the combat round",
-                         "    -  where current target dies. Increases your XP rate a bit.",
                          "  conwall options AoeCommand <command> - sets aoe command",
-                         "  conwall options AoeMinCount <num> - minimum number of mobs to aoe a room, instead of conwallslow",
-                         "  conwall options AoeMaxCount <num> - maximum number of mobs to aoe a room, instead of conwallslow",
-                         "    -  If all the mobs in the room pass Skip checks and their count is between AoeMinCount and AoeMaxCount",
-                         "    -  then conwallslow will issue AoeCommand instead of attacking mobs one by one.",
+                         "  conwall options AoeMinCount <num> - minimum number of mobs to aoe a room",
+                         "  conwall options AoeMaxCount <num> - maximum number of mobs to aoe a room",
                          "    -  set AoeMaxCount to -1, to disable aoe.",
                          "conw_notify_attack <target> - use this alias if you're attacking mob via other commands but",
                          "    - want consider window to draw attack mark on that mob.",
@@ -401,7 +384,7 @@ function Send_consider()
         return
     end
 
-    if GetVariable("doing_consider") == "true" or GetVariable("doing_conwallslow") == "true" then
+    if GetVariable("doing_consider") == "true" then
         return
     else
         SetVariable("doing_consider", "true")
@@ -443,7 +426,6 @@ function Command_line(name, line, wildcards)
     local iNum = tonumber(wildcards[1])
     local sKey = ""
 
-    Cancel_conwallslow()
     if iNum > #targT then
         return
     end
@@ -524,71 +506,51 @@ function ShouldSkipMob(mob, show_messages)
 end
 
 function Conw_all(name, line, wildcards)
-    Cancel_conwallslow()
-
     if #targT == 0 then
         ConwInfo("no targets to conwall")
+        return
     end
 
+    local isUnlimitedAoe = tostring(conwall_options.max_aoe_count) == "-1"
+    local minAoeCount = conwall_options.min_aoe_count
+    local maxAoeCount = conwall_options.max_aoe_count
+    local foundCount = 0
+    local firstFoundIndex = nil
+
+    -- Pre-calculate condition to determine if we will use AOE or single target based on min and max count
+    local willUseAoe = false
+
+    -- Determine foundCount, firstFoundIndex and if we will use AOE
     for i = #targT, 1, -1 do
-        if not ShouldSkipMob(targT[i], true) then
-            targT[i].attacked = true
-            Execute_Mob(default_command, i)
+        if not ShouldSkipMob(targT[i], isUnlimitedAoe) then
+            foundCount = foundCount + 1
+            firstFoundIndex = firstFoundIndex or i
         end
     end
-    Show_Window()
-end -- Conw_all
 
-function Conw_all_slow(name, line, wildcards)
-    local found = false
-    local found_count = 0
-    local found_i
-    for i = #targT, 1, -1 do
-        if not ShouldSkipMob(targT[i], false) then
-            found = true
-            found_count = found_count + 1
-            if found_i == nil then
-                found_i = i
+    -- Determine if AOE should be used based on found targets and options
+    willUseAoe = foundCount == #targT and foundCount >= minAoeCount and foundCount <= maxAoeCount
+
+    -- Execute commands based on AOE or single target strategy
+    if isUnlimitedAoe then
+        for i = #targT, 1, -1 do
+            if not ShouldSkipMob(targT[i], true) then
+                targT[i].attacked = true
+                Execute_Mob(default_command, i)
             end
         end
-    end
-
-    if found_count == #targT and found_count >= conwall_options.min_aoe_count and found_count <= conwall_options.max_aoe_count then
+    elseif willUseAoe then
         for i = #targT, 1, -1 do
             targT[i].attacked = true
         end
         Execute(conwall_options.aoe_command)
         Execute(default_command)
-    elseif found then
-        targT[found_i].attacked = true
-        SetVariable("doing_conwallslow", "true")
-        EnableTriggerGroup("conwallslow", 1)
-        Execute_Mob(default_command, found_i)
+    elseif firstFoundIndex then
+        targT[firstFoundIndex].attacked = true
+        Execute_Mob(default_command, firstFoundIndex)
     end
 
-    if not found then
-        ConwInfo("no targets to conwallslow")
-        if GetVariable("doing_conwallslow") == "true" then
-            Cancel_conwallslow()
-            conwall_slow_skip_next_death = false
-        end
-    end
     Show_Window()
-end
-
-function Conw_all_slow_next(name, line, wildcards)
-    if GetVariable("doing_conwallslow") == "true" then
-        Conw_all_slow()
-    end
-end
-
-function Cancel_conwallslow(name, line, wildcards)
-    if line ~= nil then
-        ConwInfo("conwallslow aborted because of look or move command")
-    end
-
-    SetVariable("doing_conwallslow", "false")
-    EnableTriggerGroup("conwallslow", 0)
 end
 
 -- Taken from http://stackoverflow.com/questions/15706270/sort-a-table-in-lua
@@ -645,14 +607,6 @@ function Update_kill(name, line, wildcards)
             Update_mobs_indicies(k + 1)
             Show_Window()
             break
-        end
-    end
-
-    if GetVariable("doing_conwallslow") == "true" then
-        if conwall_slow_skip_next_death then
-            conwall_slow_skip_next_death = false
-        else
-            Conw_all_slow()
         end
     end
 end
@@ -833,8 +787,6 @@ function Default_conwall_options()
         skip_sanctuary = false,
         min_level = -2,
         max_level = 20,
-        slow_mode = "pct",
-        slow_pct = 20,
         aoe_command = "c ultrablast",
         min_aoe_count = 5,
         max_aoe_count = -1,
@@ -848,12 +800,6 @@ function Check_conwall_options()
     end
     if conwall_options.max_level == nil then
         conwall_options.max_level = Default_conwall_options().max_level
-    end
-    if conwall_options.slow_mode == nil then
-        conwall_options.slow_mode = Default_conwall_options().slow_mode
-    end
-    if conwall_options.slow_pct == nil then
-        conwall_options.slow_pct = Default_conwall_options().slow_pct
     end
     if conwall_options.skip_neutral == nil then
         conwall_options.skip_neutral = Default_conwall_options().skip_neutral
@@ -899,8 +845,6 @@ function Conw_all_options(name, line, wildcards)
             conwall_options.skip_sanctuary and "@GYes" or "@RNo"))
         ShowNote(string.format("  @Y%-13.13s @w(%-3.5s@w)", "MinLevel", tostring(conwall_options.min_level)))
         ShowNote(string.format("  @Y%-13.13s @w(%-3.5s@w)", "MaxLevel", tostring(conwall_options.max_level)))
-        ShowNote(string.format("  @Y%-13.13s @w(%-3.5s@w)", "SlowMode", conwall_options.slow_mode))
-        ShowNote(string.format("  @Y%-13.13s @w(%-3.5s@w)", "SlowPct", tostring(conwall_options.slow_pct)))
         ShowNote(string.format("  @Y%-13.13s @w(%s@w)", "AoeCommand", conwall_options.aoe_command))
         ShowNote(string.format("  @Y%-13.13s @w(%-3.5s@w)", "AoeMinCount", tostring(conwall_options.min_aoe_count)))
         ShowNote(string.format("  @Y%-13.13s @w(%-3.5s@w)", "AoeMaxCount", tostring(conwall_options.max_aoe_count)))
@@ -941,25 +885,6 @@ function Conw_all_options(name, line, wildcards)
         conwall_options.max_level = tonumber(string.match(wildcards[1], " MaxLevel (%-?%d+)"))
         ShowNote(string.format("  @Y%-13.13s @w(%-3.5s@w)", "MaxLevel", tostring(conwall_options.max_level)))
         Show_Window()
-        Save_conwall_options()
-    elseif wildcards[1]:match("SlowMode %a+") then
-        if wildcards[1]:match("SlowMode (%a+)") == "kill" then
-            Note("Changed conwall option:")
-            conwall_options.slow_mode = "kill"
-            ShowNote(string.format("  @Y%-13.13s @w(%-3.5s@w)", "SlowMode", conwall_options.slow_mode))
-            Save_conwall_options()
-        elseif wildcards[1]:match("SlowMode (%a+)") == "pct" then
-            Note("Changed conwall option:")
-            conwall_options.slow_mode = "pct"
-            ShowNote(string.format("  @Y%-13.13s @w(%-3.5s@w)", "SlowMode", conwall_options.slow_mode))
-            Save_conwall_options()
-        else
-            Note("Unknown conwall SlowMode option " .. wildcards[1]:match("SlowMode (%a+)"))
-        end
-    elseif wildcards[1]:match("SlowPct (%d+)") then
-        Note("Changed conwall option:")
-        conwall_options.slow_pct = tonumber(wildcards[1]:match("SlowPct (%d+)"))
-        ShowNote(string.format("  @Y%-13.13s @w(%-3.5s@w)", "SlowPct", tostring(conwall_options.slow_pct)))
         Save_conwall_options()
     elseif wildcards[1]:match("AoeCommand (.+)") then
         Note("Changed conwall option:")
@@ -1365,7 +1290,6 @@ function OnPluginConnect()
     Load_conwall_options()
     SetVariable("doing_consider", "false")
     SetVariable("waiting_for_consider_start", "false")
-    SetVariable("doing_conwallslow", "false")
     ConfigureTriggers()
     CheckAMB()
 end
