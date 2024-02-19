@@ -33,6 +33,12 @@
 	* Added skill/cast execute modes
 	* Added combatend option to send consider command
 -->
+<!-- Updates by Crowley 2024
+	* Removed conwallslow after it was deemed illegal by Imms
+	* Added MaxRoomCount to allow stacking to that count
+	* Modified AOE checks to work with conwall
+-->
+
 <muclient>
 	<plugin
 		name="Aardwolf_Consider_Window"
