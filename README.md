@@ -37,9 +37,6 @@ Note: This plugin picks up custom mob keywords from S&D (either Crowley's or Win
         For example: conwall options MinLevel -2 - will skips mobs with level range below -2.  
   -   conwall options MaxLevel \<number\> - skip mobs with level range higher than this number.  
         For example: conwall options MaxLevel 21 - will skips mobs with level range above +21.
-  -   conwall options SlowMode <kill|pct> - send next target execute command after \<kill\> or when current target HP% <= set percentage.
-  -   conwall options SlowPct <num> - sets percentage for 'SlowMode pct'.
-        'SlowMode pct' allows you to bleed your attacks/spells to next target in the combat round where current target dies. Increases your XP rate a bit.
   - conw_notify_attack <target> - use this alias if you're attacking mob via other commands but
 			want consider window to draw attack mark on that mob.
 			For example when using S&D's kk to attack do the following "xset qk my_uber_attack_alias"
