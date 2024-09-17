@@ -431,7 +431,7 @@ function Command_line(name, line, wildcards)
         return
     end
 
-    if wildcards[2] == "" then
+    if wildcards[2] == "" or wildcards[2] == nil then
         sKey = default_command
     else
         sKey = tostring(wildcards[2])
@@ -515,54 +515,43 @@ function Conw_all(name, line, wildcards)
     local maxAoeCount = conwall_options.max_aoe_count
     local minAoeCount = conwall_options.min_aoe_count
     local maxRoomCount = conwall_options.max_room_count or #targT -- Default to #targT if not set
-    local foundCount = 0
 
-    -- Count valid targets
+    local validTargets = {}
+
+    -- Get valid targets
     for i = 1, #targT do
         if not ShouldSkipMob(targT[i], maxAoeCount == -1) then
-            foundCount = foundCount + 1
+            table.insert(validTargets, i)
         end
     end
 
-    if maxAoeCount == -1 then  -- AoE is disabled, handle based on MaxRoomCount
-        local executeCount = math.min(foundCount, maxRoomCount)
-        ConwInfo("Conwalling " .. executeCount .. " targets (No AoE)")
-        for i = 1, executeCount do
-            if not ShouldSkipMob(targT[i], true) then
-                targT[i].attacked = true
-                Execute_Mob(default_command, i)
-            end
+    if maxAoeCount > 0 and #targT == #validTargets and #validTargets >= minAoeCount and #validTargets <= maxAoeCount then
+        -- Use AoE command
+        for i = 1, #targT do
+            targT[i].attacked = true
         end
-    else  -- AoE is enabled
-        if foundCount >= minAoeCount and foundCount <= maxAoeCount then
-            -- Use AoE command
-            for i = 1, foundCount do
-                targT[i].attacked = true
-            end
-            Execute(conwall_options.aoe_command)
-            Execute(default_command)
-        elseif foundCount < minAoeCount then
-            -- Not enough for AoE, execute on all valid targets
-            for i = 1, foundCount do
-                if not ShouldSkipMob(targT[i], false) then
-                    targT[i].attacked = true
-                    Execute_Mob(default_command, i)
-                end
-            end
-        elseif foundCount > maxAoeCount then
-            -- More than max AoE count, execute from max down to AoEMaxCount
-            for i = foundCount, foundCount - maxAoeCount + 1, -1 do
-                if not ShouldSkipMob(targT[i], false) then
-                    targT[i].attacked = true
-                    Execute_Mob(default_command, i)
-                end
-            end
+        Execute(conwall_options.aoe_command)
+        Execute(default_command)
+    else
+        local executeCount = math.min(#validTargets, math.max(maxRoomCount, minAoeCount))
+        -- Adjust for max AOE count
+        -- The rough idea is you attack once to get mobs to AOE max and then attack again with AOE
+        if maxAoeCount > 0 and #validTargets > maxAoeCount and #targT == #validTargets then
+            -- ConwInfo("Conwalling max " .. executeCount .. " targets (No AoE)")
+            executeCount = #validTargets - maxAoeCount
+        end
+
+        ConwInfo("Conwalling " .. executeCount .. " targets (No AoE)")
+
+        for i = 1, executeCount do
+            local targetIndex = validTargets[i]
+            targT[targetIndex].attacked = true
+            Execute_Mob(default_command, targetIndex)
         end
     end
 
     Show_Window()
 end
-
 
 -- Taken from http://stackoverflow.com/questions/15706270/sort-a-table-in-lua
 function spairs(t, order)
