@@ -667,7 +667,17 @@
 	</alias>
 	<alias
 		script="Command_line"
-		match="^(\d+)\s?(\w*)$"
+		match="^(\d+)\s+(\w*)$"
+		enabled="y"
+		regexp="y"
+		send_to="12"
+		keep_evaluating="y"
+		sequence="1"
+		>
+	</alias>
+	<alias
+		script="Command_line"
+		match="^(\d+)$"
 		enabled="y"
 		regexp="y"
 		send_to="12"
