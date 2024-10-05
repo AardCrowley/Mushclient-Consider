@@ -33,7 +33,8 @@ local colour_to_ansi = {
     ["gray"] = "@x008",
     ["gold"] = "@x220",
     ["white"] = "@x015",
-    ["silver"] = "@x007"
+    ["silver"] = "@x007",
+    ["darkgray"] = "@x240",
 }
 
 require "aard_register_z_on_create"
@@ -51,6 +52,8 @@ local conw_kill = tonumber(GetVariable("conw_kill")) or 0
 local conw_combatend = tonumber(GetVariable("conw_combatend")) or 1
 local conw_misc = tonumber(GetVariable("conw_misc")) or 1
 local conw_execute_mode = GetVariable("conw_execute_mode") ~= nil and GetVariable("conw_execute_mode") or "skill"
+local conw_info_logs_on = tonumber(GetVariable("conw_info_logs_on")) or 0
+local conw_error_logs_on = tonumber(GetVariable("conw_error_logs_on")) or 1
 local conw_ignore_areas = {}
 
 conwall_options = {}
@@ -66,9 +69,23 @@ local default_command
 local mob_attack_sequence = 0
 targT = {}
 
-function ConwInfo(message)
-    ColourTell("white", "blue", message)
+function ConwNote(message)
+    ColourTell("white", "forestgreen", message)
     ColourNote("", "black", " ")
+end
+
+function ConwInfo(message)
+    if conw_info_logs_on == 1 or force == true then
+        ColourTell("white", "mediumblue", message)
+        ColourNote("", "black", " ")
+    end
+end
+
+function ConwError(message)
+    if conw_error_logs_on == 1 then
+        ColourTell("white", "crimson", message)
+        ColourNote("", "black", " ")
+    end
 end
 
 -- 1         At login screen, no player yet
@@ -134,7 +151,7 @@ function Keyword_change(name, line, wildcards)
     end
     keyword_position = GetVariable("keyword_position")
 
-    ConwInfo("Keywords will now be taken from the " .. keyword_position .. " of Mobile names. ")
+    ConwNote("Keywords will now be taken from the " .. keyword_position .. " of Mobile names. ")
 end -- keyword_position
 
 local function toggle_flags()
@@ -173,6 +190,7 @@ function Conw(name, line, wildcards)
                          "  conwall options SkipEvil - toggle skip Evil mobs",
                          "  conwall options SkipGood - toggle skip Good mobs",
                          "  conwall options SkipNeutral - toggle skip Neutral mobs",
+                         "  conwall options SkipAlignAuto - automatically updates SkipEvil, SkipGood, and SkipNeutral based on current alignment",
                          "  conwall options SkipSanctuary - toggle skip mobs with Sanctuary",
                          "  conwall options MinLevel <number> - skip mobs with level range lower than this number",
                          "    - For example: conwall options MinLevel -2 - will skips mobs with level range below -2",
@@ -190,7 +208,11 @@ function Conw(name, line, wildcards)
                          "    - and have the above alias expand to conw_notify_attack %1;;kill %1",
                          "conw auto|on|off - toggle auto update consider window on room entry and after combat.",
                          "conw misc|entry|kill|combatend - toggle consider on room entry, mob kill, combat end or miscellanous stuff",
-                         "conw flags - toggle showing of flags on and off.", "conw ?|help - show this help."}
+                         "conw flags - toggle showing of flags on and off.",
+                         "conw info - toggle info logs on and off.",
+                         "conw error - toggle error logs on and off.",
+                         "conw ?|help - show this help.",
+                     }
         for i, v in ipairs(comlist) do
             local sSpa = string.rep(" ", 20 - v:sub(1, v:find("-") - 1):len())
             ColourTell("yellow", GetInfo(271), v:sub(1, v:find("-") - 1) .. sSpa)
@@ -202,10 +224,10 @@ function Conw(name, line, wildcards)
     if wildcards[1] == "auto" then
         if conw_on == 1 then
             conw_on = 0
-            ConwInfo("Auto consider off.")
+            ConwNote("Auto consider off.")
         else
             conw_on = 1
-            ConwInfo("Auto consider on.")
+            ConwNote("Auto consider on.")
         end
         ConfigureTriggers()
         Show_Window()
@@ -215,7 +237,7 @@ function Conw(name, line, wildcards)
     if wildcards[1] == "off" then
         conw_on = 0
         ConfigureTriggers()
-        ConwInfo("Auto consider off.")
+        ConwNote("Auto consider off.")
         Show_Window()
         return
     end
@@ -223,7 +245,7 @@ function Conw(name, line, wildcards)
     if wildcards[1] == "on" then
         conw_on = 1
         ConfigureTriggers()
-        ConwInfo("Auto consider on.")
+        ConwNote("Auto consider on.")
         Show_Window()
         return
     end
@@ -231,10 +253,10 @@ function Conw(name, line, wildcards)
     if wildcards[1] == "kill" then
         if conw_kill == 1 then
             conw_kill = 0
-            ConwInfo("Consider on kill - OFF.")
+            ConwNote("Consider on kill - OFF.")
         else
             conw_kill = 1
-            ConwInfo("Consider on kill - ON.")
+            ConwNote("Consider on kill - ON.")
         end
         if conw_on == 1 then
             EnableTriggerGroup("auto_consider_on_kill", conw_kill)
@@ -245,10 +267,10 @@ function Conw(name, line, wildcards)
     if wildcards[1] == "entry" then
         if conw_entry == 1 then
             conw_entry = 0
-            ConwInfo("Consider on entry - OFF.")
+            ConwNote("Consider on entry - OFF.")
         else
             conw_entry = 1
-            ConwInfo("Consider on entry - ON.")
+            ConwNote("Consider on entry - ON.")
         end
         EnableTriggerGroup("auto_consider_on_entry", conw_entry)
         return
@@ -257,10 +279,10 @@ function Conw(name, line, wildcards)
     if wildcards[1] == "misc" then
         if conw_misc == 1 then
             conw_misc = 0
-            ConwInfo("Consider on misc - OFF.")
+            ConwNote("Consider on misc - OFF.")
         else
             conw_misc = 1
-            ConwInfo("Consider on misc - ON.")
+            ConwNote("Consider on misc - ON.")
         end
         if conw_on == 1 then
             EnableTriggerGroup("auto_consider_misc", conw_misc)
@@ -271,10 +293,32 @@ function Conw(name, line, wildcards)
     if wildcards[1] == "combatend" then
         if conw_combatend == 1 then
             conw_combatend = 0
-            ConwInfo("Consider on combat end - OFF.")
+            ConwNote("Consider on combat end - OFF.")
         else
             conw_combatend = 1
-            ConwInfo("Consider on combat end - ON.")
+            ConwNote("Consider on combat end - ON.")
+        end
+        return
+    end
+
+    if wildcards[1] == "info" then
+        if conw_info_logs_on == 1 then
+            conw_info_logs_on = 0
+            ConwNote("Conw info logs - OFF")
+        else
+            conw_info_logs_on = 1
+            ConwNote("Conw info logs - ON")
+        end
+        return
+    end
+
+    if wildcards[1] == "error" then
+        if conw_error_logs_on == 1 then
+            conw_error_logs_on = 0
+            ConwNote("Conw error logs - OFF")
+        else
+            conw_error_logs_on = 1
+            ConwNote("Conw error logs - ON")
         end
         return
     end
@@ -326,7 +370,7 @@ function Conw(name, line, wildcards)
     elseif wildcards[1] and wildcards[1]:match("^%w+$") then
         SetVariable("default_command", wildcards[1])
         default_command = GetVariable("default_command")
-        ConwInfo("Default command: " .. wildcards[1])
+        ConwNote("Default command: " .. wildcards[1])
     end
 end -- Conw
 
@@ -441,10 +485,22 @@ function Command_line(name, line, wildcards)
         targT[iNum].attacked = true
         Execute_Mob(sKey, iNum)
     else
-        ConwInfo("no target in targT ")
+        ConwError("no target in targT ")
     end
 
 end -- Command_line
+
+function UpdateSkipAutoAlign()
+    if not conwall_options.skip_align_auto then
+        return
+    end
+
+    local align = tonumber(gmcp("char.status.align"))
+
+    conwall_options.skip_evil = align < -500
+    conwall_options.skip_neutral = align > -500 and align < 500
+    conwall_options.skip_good = align > 500
+end
 
 function ShouldSkipMob(mob, show_messages)
     local minlevel, maxlevel = string.match(mob.range, "([+-]?%d+) to ([+-]?%d+)")
@@ -508,7 +564,7 @@ end
 
 function Conw_all(name, line, wildcards)
     if #targT == 0 then
-        ConwInfo("no targets to conwall")
+        ConwError("no targets to conwall")
         return
     end
 
@@ -517,6 +573,8 @@ function Conw_all(name, line, wildcards)
     local maxRoomCount = conwall_options.max_room_count or #targT -- Default to #targT if not set
 
     local validTargets = {}
+
+    UpdateSkipAutoAlign()
 
     -- Get valid targets
     for i = 1, #targT do
@@ -537,16 +595,22 @@ function Conw_all(name, line, wildcards)
         -- Adjust for max AOE count
         -- The rough idea is you attack once to get mobs to AOE max and then attack again with AOE
         if maxAoeCount > 0 and #validTargets > maxAoeCount and #targT == #validTargets then
-            -- ConwInfo("Conwalling max " .. executeCount .. " targets (No AoE)")
-            executeCount = #validTargets - maxAoeCount
+            executeCount = math.min(#validTargets - maxAoeCount, executeCount)
         end
 
-        ConwInfo("Conwalling " .. executeCount .. " targets (No AoE)")
+        if executeCount == 0 then
+            ConwError("No valid targets")
+        else
+            ConwInfo("Conwalling " .. executeCount .. " targets (No AoE)")
 
-        for i = 1, executeCount do
-            local targetIndex = validTargets[i]
-            targT[targetIndex].attacked = true
-            Execute_Mob(default_command, targetIndex)
+            -- Attack targets in reverse order to better handle mobs with the same name.
+            -- This ensures that if you kill the first target before engaging the next target
+            -- that it is still able to successfully initiate an attack as the order wouldn't have changed.
+            for i = #validTargets, #validTargets - executeCount + 1, -1 do
+                local targetIndex = validTargets[i]
+                targT[targetIndex].attacked = true
+                Execute_Mob(default_command, targetIndex)
+            end
         end
     end
 
@@ -785,12 +849,13 @@ function Default_conwall_options()
         skip_good = false,
         skip_neutral = false,
         skip_sanctuary = false,
+        skip_align_auto = false,
         min_level = -2,
         max_level = 20,
         aoe_command = "c ultrablast",
         min_aoe_count = 5,
         max_aoe_count = -1,
-        max_room_count = 5,
+        max_room_count = 5
     }
     return default_options
 end
@@ -804,6 +869,9 @@ function Check_conwall_options()
     end
     if conwall_options.skip_neutral == nil then
         conwall_options.skip_neutral = Default_conwall_options().skip_neutral
+    end
+    if conwall_options.skip_align_auto == nil then
+        conwall_options.skip_align_auto = Default_conwall_options().skip_align_auto
     end
     if conwall_options.aoe_command == nil then
         conwall_options.aoe_command = Default_conwall_options().aoe_command
@@ -845,6 +913,8 @@ function Conw_all_options(name, line, wildcards)
         ShowNote(string.format("  @Y%-13.13s @w(%-3.5s@w)", "SkipGood", conwall_options.skip_good and "@GYes" or "@RNo"))
         ShowNote(string.format("  @Y%-13.13s @w(%-3.5s@w)", "SkipNeutral",
             conwall_options.skip_neutral and "@GYes" or "@RNo"))
+        ShowNote(string.format("  @Y%-13.13s @w(%-3.5s@w)", "SkipAlignAuto",
+            conwall_options.skip_align_auto and "@GYes" or "@RNo"))
         ShowNote(string.format("  @Y%-13.13s @w(%-3.5s@w)", "SkipSanctuary",
             conwall_options.skip_sanctuary and "@GYes" or "@RNo"))
         ShowNote(string.format("  @Y%-13.13s @w(%-3.5s@w)", "MinLevel", tostring(conwall_options.min_level)))
@@ -869,6 +939,13 @@ function Conw_all_options(name, line, wildcards)
         conwall_options.skip_neutral = not conwall_options.skip_neutral
         ShowNote(string.format("  @Y%-13.13s @w(%-3.5s@w)", "SkipNeutral",
             conwall_options.skip_neutral and "@GYes" or "@RNo"))
+        Show_Window()
+        Save_conwall_options()
+    elseif wildcards[1] == " SkipAlignAuto" then
+        Note("Changed conwall option:")
+        conwall_options.skip_align_auto = not conwall_options.skip_align_auto
+        ShowNote(string.format("  @Y%-13.13s @w(%-3.5s@w)", "SkipAlignAuto",
+            conwall_options.skip_align_auto and "@GYes" or "@RNo"))
         Show_Window()
         Save_conwall_options()
     elseif wildcards[1] == " SkipSanctuary" then
@@ -1011,12 +1088,14 @@ function Adapt_consider(name, line, wildcards)
     end -- if
 
     if not mob and SHOW_NO_MOB then
-        ConwInfo("Could not find anything: " .. line)
+        ConwError("Could not find anything: " .. line)
     end -- not  found in table
 
 end -- Adapt_consider
 
 function Draw_Title()
+    UpdateSkipAutoAlign()
+
     local consider_status = ""
     local title_text = ""
     local entrycheck = {"@RE", "@GE"}
@@ -1090,6 +1169,8 @@ function Update_Current_Target()
 end
 
 function Show_Window()
+    UpdateSkipAutoAlign()
+
     -- get width and height and draw the window
     if #targT > 0 then
         for i, v in ipairs(targT) do
@@ -1118,7 +1199,12 @@ function Show_Window()
         local sAttacked = (v.aimed and not v.dead) and "@R\215@W " or (v.attacked and "@G\215@W " or "  ")
         local sLine = tostring(i) .. ". " .. sAttacked .. v.mflags .. " @W"
         local name_left = WindowTextWidth(Win, fontid, strip_colours(sLine)) + left
-        sLine = sLine .. v.name .. " " .. colour_to_ansi[v.colour] .. v.range
+        if fontid == Font_id and not v.attacked then
+            -- Targets that should be skipped and are not being actively attacked will render the text in gray
+            sLine = sLine .. colour_to_ansi["darkgray"] .. " " .. v.name .. " " .. colour_to_ansi[v.colour] .. v.range
+        else
+            sLine = sLine .. v.name .. " " .. colour_to_ansi[v.colour] .. v.range
+        end
         right = WindowTextWidth(Win, fontid, strip_colours(sLine)) + left
         if v.pct ~= nil then
             local pct = tonumber(v.pct)
@@ -1253,6 +1339,9 @@ function OnPluginInstall()
     conw_kill = tonumber(GetVariable("conw_kill")) or 0
     conw_misc = tonumber(GetVariable("conw_misc")) or 1
     conw_combatend = tonumber(GetVariable("conw_combatend")) or 1
+    conw_info_logs_on = tonumber(GetVariable("conw_info_logs_on")) or 0
+    conw_error_logs_on = tonumber(GetVariable("conw_error_logs_on")) or 1
+
     conw_execute_mode = GetVariable("conw_execute_mode") ~= nil and GetVariable("conw_execute_mode") or "skill"
     local ignore_list = GetVariable("conw_ignore_areas")
     if ignore_list ~= nil then
@@ -1318,6 +1407,9 @@ function OnPluginSaveState()
     SetVariable("conw_on", conw_on)
     SetVariable("conw_execute_mode", conw_execute_mode)
     SetVariable("conw_ignore_areas", serialize.save_simple(conw_ignore_areas))
+    SetVariable("conw_info_logs_on", conw_info_logs_on)
+    SetVariable("conw_error_logs_on", conw_error_logs_on)
+
     movewindow.save_state(Win)
     Save_conwall_options()
 end -- OnPluginSaveState
