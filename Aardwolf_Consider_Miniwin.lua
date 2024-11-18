@@ -169,6 +169,7 @@ function Conw(name, line, wildcards)
     -- show help <conw ?>
     if wildcards[1] == "?" or wildcards[1] == "help" then
         local comlist = {"conw - update window with consider all command.",
+                         "conw options - See current conw options",
                          "<num> <word> - Execute <word> with keyword from line <num> on consider window.",
                          "<num> - Execute with default word.", "conw <word> - set default command.",
                          "conw IgnoreArea [add|remove|list] - add/remove or list area names to ignore for conw",
@@ -218,6 +219,29 @@ function Conw(name, line, wildcards)
             ColourTell("yellow", GetInfo(271), v:sub(1, v:find("-") - 1) .. sSpa)
             ColourNote("white", GetInfo(271), v:sub(v:find("-"), v:len()))
         end
+        return
+    end
+
+    if wildcards[1] == "options" then
+        Note("Current conw options:")
+        ShowNote(string.format("  @Y%-22.22s @w(%-3.5s@w)", "Auto consider", conw_on == 1 and "@GYes" or "@RNo"))
+        ShowNote(string.format("  @Y%-22.22s @w(%-3.5s@w)", "Consider on kill", conw_kill == 1 and "@GYes" or "@RNo"))
+        ShowNote(string.format("  @Y%-22.22s @w(%-3.5s@w)", "Consider on entry", conw_entry == 1 and "@GYes" or "@RNo"))
+        ShowNote(string.format("  @Y%-22.22s @w(%-3.5s@w)", "Consider on misc", conw_misc == 1 and "@GYes" or "@RNo"))
+        ShowNote(string.format("  @Y%-22.22s @w(%-3.5s@w)", "Consider on combat end", conw_combatend == 1 and "@GYes" or "@RNo"))
+        ShowNote(string.format("  @Y%-22.22s @w(%s@w)", "Command", default_command))
+        ShowNote(string.format("  @Y%-22.22s @w(%-3.5s@w)", "Execute mode", conw_execute_mode))
+        ShowNote(string.format("  @Y%-22.22s @w(%-3.5s@w)", "Flags in window", SHOW_FLAGS and "@GYes" or "@RNo"))
+        ShowNote(string.format("  @Y%-22.22s @w(%-3.5s@w)", "Info logs", conw_info_logs_on == 1 and "@GYes" or "@RNo"))
+        ShowNote(string.format("  @Y%-22.22s @w(%-3.5s@w)", "Error logs", conw_error_logs_on == 1 and "@GYes" or "@RNo"))
+
+        ShowNote(string.format("  @Y%-22.22s @w", "Ignoring areas:"))
+        for area, state in pairs(conw_ignore_areas) do
+            if state == true then
+                ShowNote("    - " .. area)
+            end
+        end
+
         return
     end
 
@@ -919,9 +943,12 @@ function Conw_all_options(name, line, wildcards)
             conwall_options.skip_sanctuary and "@GYes" or "@RNo"))
         ShowNote(string.format("  @Y%-13.13s @w(%-3.5s@w)", "MinLevel", tostring(conwall_options.min_level)))
         ShowNote(string.format("  @Y%-13.13s @w(%-3.5s@w)", "MaxLevel", tostring(conwall_options.max_level)))
+        ShowNote(string.format("  @Y%-13.13s @w(%s@w)", "Command", default_command))
         ShowNote(string.format("  @Y%-13.13s @w(%s@w)", "AoeCommand", conwall_options.aoe_command))
         ShowNote(string.format("  @Y%-13.13s @w(%-3.5s@w)", "AoeMinCount", tostring(conwall_options.min_aoe_count)))
         ShowNote(string.format("  @Y%-13.13s @w(%-3.5s@w)", "AoeMaxCount", tostring(conwall_options.max_aoe_count)))
+        ShowNote(string.format("  @Y%-13.13s @w(%-3.5s@w)", "MaxRoomCount", tostring(conwall_options.max_room_count)))
+
     elseif wildcards[1] == " SkipEvil" then
         Note("Changed conwall option:")
         conwall_options.skip_evil = not conwall_options.skip_evil
