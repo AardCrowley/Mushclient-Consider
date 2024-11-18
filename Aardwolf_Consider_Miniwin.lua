@@ -169,6 +169,7 @@ function Conw(name, line, wildcards)
     -- show help <conw ?>
     if wildcards[1] == "?" or wildcards[1] == "help" then
         local comlist = {"conw - update window with consider all command.",
+                         "conw options - See current conw options",
                          "<num> <word> - Execute <word> with keyword from line <num> on consider window.",
                          "<num> - Execute with default word.", "conw <word> - set default command.",
                          "conw IgnoreArea [add|remove|list] - add/remove or list area names to ignore for conw",
