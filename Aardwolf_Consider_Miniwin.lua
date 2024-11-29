@@ -520,9 +520,11 @@ function UpdateSkipAutoAlign()
     end
 
     local align = tonumber(gmcp("char.status.align"))
+    if align == nil then
+        return
+    end
 
     conwall_options.skip_evil = align < -500
-    conwall_options.skip_neutral = align > -500 and align < 500
     conwall_options.skip_good = align > 500
 end
 
