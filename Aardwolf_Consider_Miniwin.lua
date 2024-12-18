@@ -132,7 +132,7 @@ function OnPluginBroadcast(msg, id, name, text)
             elseif currentState == 3 and was_in_combat then
                 was_in_combat = false
                 if conw_on == 1 and conw_combatend == 1 then
-                    Send_consider()
+                    Plugin_Activated_Consider()
                 end
             end
 
@@ -398,12 +398,21 @@ function Conw(name, line, wildcards)
     end
 end -- Conw
 
-function Send_consider()
+function User_Activated_Consider()
+    Send_Consider_Internal()
+end
+
+function Plugin_Activated_Consider()
     if conw_on ~= 1 then
         return
     end
 
-    if Is_in_ignored_zone() then
+    Send_Consider_Internal()
+end
+
+-- not to be called directly
+function Send_Consider_Internal()
+        if Is_in_ignored_zone() then
         local zone = gmcp("room.info.zone")
         targT = {}
         local t = {
@@ -462,7 +471,7 @@ function Send_consider()
         SendNoEcho("consider all")
         SendNoEcho("echo nhm")
     end
-end -- Send_consider
+end
 
 function Execute_Mob(command, index)
     wait.make(function()
@@ -815,7 +824,7 @@ function RoomCharsEnd(name, line, wildcards)
 
     if conw_entry == 1 then
         if #roomchars > 0 then
-            Send_consider()
+            Plugin_Activated_Consider()
         else
             targT = {}
             Show_Window()
