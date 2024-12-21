@@ -46,7 +46,21 @@ require "var"
 require "wait"
 
 -- consider flags
-local conw_on = tonumber(GetVariable("conw_on")) or 1
+--[[
+    Flags:
+        conw_enabled: controls the entire plugin
+        auto_consider: controls all automatic consider actions (i.e., between rooms, after kill, combat end)
+        conw_entry: auto consider on room entry
+        conw_kill: auto consider after finishing a kill
+        conw_combatend: auto consider after finishing combat
+        conw_misc: auto consider after certain inputs that don't fall into the other categories (i.e., flee & door/gateway)
+        conw_execute_mode: mode to use default "execute" command as (skill, spell, pro), see "conw help" for details on output
+        conw_info_logs_on: controls if Info messages are sent to user on certain actions (shows user the commands that Conw is automating, mostly)
+        conw_error_logs_on: controls if Error messages are sent to user (currently just if targets for the current command could not be found)
+        conw_ignore_areas: list of areas where Conw will automatically be disabled
+--]]
+local conw_enabled = tonumber(GetVariable("conw_enabled")) or 1
+local auto_consider = tonumber(GetVariable("auto_consider")) or 1
 local conw_entry = tonumber(GetVariable("conw_entry")) or 1
 local conw_kill = tonumber(GetVariable("conw_kill")) or 0
 local conw_combatend = tonumber(GetVariable("conw_combatend")) or 1
@@ -131,8 +145,8 @@ function OnPluginBroadcast(msg, id, name, text)
                 was_in_combat = true
             elseif currentState == 3 and was_in_combat then
                 was_in_combat = false
-                if conw_on == 1 and conw_combatend == 1 then
-                    Send_consider()
+                if conw_combatend == 1 then
+                    Plugin_Activated_Consider()
                 end
             end
 
@@ -143,7 +157,6 @@ function OnPluginBroadcast(msg, id, name, text)
 end
 
 function Keyword_change(name, line, wildcards)
-
     if keyword_position == "endw" then
         SetVariable("keyword_position", "beginning")
     else
@@ -224,7 +237,7 @@ function Conw(name, line, wildcards)
 
     if wildcards[1] == "options" then
         Note("Current conw options:")
-        ShowNote(string.format("  @Y%-22.22s @w(%-3.5s@w)", "Auto consider", conw_on == 1 and "@GYes" or "@RNo"))
+        ShowNote(string.format("  @Y%-22.22s @w(%-3.5s@w)", "Auto consider", auto_consider == 1 and "@GYes" or "@RNo"))
         ShowNote(string.format("  @Y%-22.22s @w(%-3.5s@w)", "Consider on kill", conw_kill == 1 and "@GYes" or "@RNo"))
         ShowNote(string.format("  @Y%-22.22s @w(%-3.5s@w)", "Consider on entry", conw_entry == 1 and "@GYes" or "@RNo"))
         ShowNote(string.format("  @Y%-22.22s @w(%-3.5s@w)", "Consider on misc", conw_misc == 1 and "@GYes" or "@RNo"))
@@ -246,11 +259,11 @@ function Conw(name, line, wildcards)
     end
 
     if wildcards[1] == "auto" then
-        if conw_on == 1 then
-            conw_on = 0
+        if auto_consider == 1 then
+            auto_consider = 0
             ConwNote("Auto consider off.")
         else
-            conw_on = 1
+            auto_consider = 1
             ConwNote("Auto consider on.")
         end
         ConfigureTriggers()
@@ -259,17 +272,17 @@ function Conw(name, line, wildcards)
     end
 
     if wildcards[1] == "off" then
-        conw_on = 0
+        conw_enabled = 0
         ConfigureTriggers()
-        ConwNote("Auto consider off.")
+        ConwNote("Conw off.")
         Show_Window()
         return
     end
 
     if wildcards[1] == "on" then
-        conw_on = 1
+        conw_enabled = 1
         ConfigureTriggers()
-        ConwNote("Auto consider on.")
+        ConwNote("Conw on.")
         Show_Window()
         return
     end
@@ -282,7 +295,7 @@ function Conw(name, line, wildcards)
             conw_kill = 1
             ConwNote("Consider on kill - ON.")
         end
-        if conw_on == 1 then
+        if conw_kill == 1 then
             EnableTriggerGroup("auto_consider_on_kill", conw_kill)
         end
         return
@@ -296,7 +309,9 @@ function Conw(name, line, wildcards)
             conw_entry = 1
             ConwNote("Consider on entry - ON.")
         end
-        EnableTriggerGroup("auto_consider_on_entry", conw_entry)
+        if conw_entry == 1 then
+            EnableTriggerGroup("auto_consider_on_entry", conw_entry) 
+        end
         return
     end
 
@@ -308,7 +323,7 @@ function Conw(name, line, wildcards)
             conw_misc = 1
             ConwNote("Consider on misc - ON.")
         end
-        if conw_on == 1 then
+        if conw_misc == 1 then
             EnableTriggerGroup("auto_consider_misc", conw_misc)
         end
         return
@@ -398,8 +413,22 @@ function Conw(name, line, wildcards)
     end
 end -- Conw
 
-function Send_consider()
-    if conw_on ~= 1 then
+function User_Activated_Consider()
+    Send_Consider_Internal()
+end
+
+function Plugin_Activated_Consider()
+    -- failsafe for if consider is activated by an automatic action
+    if auto_consider == 0 then
+        return
+    end
+
+    Send_Consider_Internal()
+end
+
+-- not to be called directly
+function Send_Consider_Internal()
+    if conw_enabled == 0 then
         return
     end
 
@@ -462,7 +491,7 @@ function Send_consider()
         SendNoEcho("consider all")
         SendNoEcho("echo nhm")
     end
-end -- Send_consider
+end
 
 function Execute_Mob(command, index)
     wait.make(function()
@@ -815,7 +844,7 @@ function RoomCharsEnd(name, line, wildcards)
 
     if conw_entry == 1 then
         if #roomchars > 0 then
-            Send_consider()
+            Plugin_Activated_Consider()
         else
             targT = {}
             Show_Window()
@@ -1143,7 +1172,7 @@ function Draw_Title()
     local right = WindowInfo(Win, 3)
 
     movewindow.add_drag_handler(Win, 0, top, right, bottom, 1)
-    if (conw_on == 1) then
+    if (conw_enabled == 1) then
         consider_status = "@GON@W " .. entrycheck[conw_entry + 1] .. killcheck[conw_kill + 1] ..
                               misccheck[conw_misc + 1] .. combatendcheck[conw_combatend + 1] .. " " ..
                               skipevil[(conwall_options.skip_evil and 1 or 0) + 1] ..
@@ -1303,7 +1332,7 @@ function Right_click_menu()
 end
 
 function ConfigureTriggers()
-    if conw_on == 1 then
+    if auto_consider then
         EnableTriggerGroup("auto_consider_on_kill", conw_kill)
         EnableTriggerGroup("auto_consider_on_entry", conw_entry)
         EnableTriggerGroup("auto_consider_misc", conw_misc)
@@ -1363,7 +1392,8 @@ function OnPluginInstall()
     SetVariable("doing_consider", "false")
     SetVariable("waiting_for_consider_start", "false")
 
-    conw_on = tonumber(GetVariable("conw_on")) or 1
+    conw_enabled = tonumber(GetVariable("conw_enabled")) or 1
+    auto_consider = tonumber(GetVariable("auto_consider")) or 1
     conw_entry = tonumber(GetVariable("conw_entry")) or 1
     conw_kill = tonumber(GetVariable("conw_kill")) or 0
     conw_misc = tonumber(GetVariable("conw_misc")) or 1
@@ -1433,7 +1463,8 @@ function OnPluginSaveState()
     SetVariable("conw_kill", conw_kill)
     SetVariable("conw_entry", conw_entry)
     SetVariable("conw_combatend", conw_combatend)
-    SetVariable("conw_on", conw_on)
+    SetVariable("conw_enabled", conw_enabled)
+    SetVariable("auto_consider", auto_consider)
     SetVariable("conw_execute_mode", conw_execute_mode)
     SetVariable("conw_ignore_areas", serialize.save_simple(conw_ignore_areas))
     SetVariable("conw_info_logs_on", conw_info_logs_on)

@@ -105,7 +105,7 @@
         omit_from_output="n"
         keep_evaluating="y"
         regexp="y"
-        script="Send_consider"
+        script="Plugin_Activated_Consider"
         send_to="12"
         sequence="2"
     >
@@ -383,7 +383,7 @@
 		omit_from_output="n"
 		keep_evaluating="y"
 		regexp="y"
-		script="Send_consider"
+		script="Plugin_Activated_Consider"
 		send_to="12"
 		sequence="1"
 		>
@@ -395,7 +395,7 @@
 		omit_from_output="n"
 		keep_evaluating="y"
 		regexp="y"
-		script="Send_consider"
+		script="Plugin_Activated_Consider"
 		send_to="12"
 		sequence="2"
 		>
@@ -407,7 +407,7 @@
 		omit_from_output="n"
 		keep_evaluating="y"
 		regexp="y"
-		script="Send_consider"
+		script="Plugin_Activated_Consider"
 		send_to="12"
 		sequence="1"
 		>
@@ -419,7 +419,7 @@
 		omit_from_output="n"
 		keep_evaluating="y"
 		regexp="y"
-		script="Send_consider"
+		script="Plugin_Activated_Consider"
 		send_to="12"
 		sequence="1"
 		>
@@ -656,7 +656,7 @@
 		>
 	</alias>
 	<alias
-		script="Send_consider"
+		script="User_Activated_Consider"
 		match="^conw$"
 		keep_evaluating="y"
 		enabled="y"
