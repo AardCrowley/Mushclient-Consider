@@ -406,7 +406,7 @@ function Conw(name, line, wildcards)
     elseif wildcards[1] and wildcards[1]:match("^IgnoreArea list$") then
         Note("Conw ignoring the following areas:")
         tprint(conw_ignore_areas)
-    elseif wildcards[1] and wildcards[1]:match("^%w+$") then
+    elseif wildcards[1] and wildcards[1]:match("^[%w%s]+$") then
         SetVariable("default_command", wildcards[1])
         default_command = GetVariable("default_command")
         ConwNote("Default command: " .. wildcards[1])
